@@ -1,7 +1,6 @@
 ﻿open Xunit
 open FsUnit.Xunit
 open System.Collections.Generic
-open System.Threading.Tasks
 
 type Direction = 
     | Up
@@ -92,18 +91,22 @@ let part2 (map: char[][]) =
         foundLoop
 
     let si, sj =
-        List.allPairs [0 .. (n - 1)] [0 .. (n - 1)]
+        List.allPairs [ 0 .. (n - 1) ] [ 0 .. (n - 1) ]
         |> List.find (fun (i, j) -> map[i][j] = '^')
 
-    List.allPairs [0 .. (n - 1)] [0 .. (n - 1)]
-    |> List.filter (fun (i, j) ->
-        if map[i][j] = '.' then
-            let row = map[i] |> Array.updateAt j '#'
-            let newMap = map |> Array.updateAt i row
-            findLoop newMap (si, sj) Up
-        else
-            false)
-    |> List.length
+    let results =
+        List.allPairs [ 0 .. (n - 1) ] [ 0 .. (n - 1) ]
+        |> List.toArray
+        |> Array.Parallel.map (fun (i, j) ->
+            if map[i][j] = '.' then
+                let row = map[i] |> Array.updateAt j '#'
+                let newMap = map |> Array.updateAt i row
+                findLoop newMap (si, sj) Up
+            else
+                false)
+
+    results |> Array.filter id |> Array.length
+
 
 let parse (input: string) =
     input.Split([| '\r'; '\n' |], System.StringSplitOptions.RemoveEmptyEntries)
