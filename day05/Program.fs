@@ -129,12 +129,22 @@ module Example =
     let testPart2 () =
         parse input ||> part2 |> should equal 123
 
+open System.Diagnostics
+
 [<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let rules, updates = parse input
 
-    (rules, updates) ||> part1 |> printfn "Part 1: %d"
-    (rules, updates) ||> part2 |> printfn "Part 2: %d"
+    let stopwatch = Stopwatch.StartNew()
+
+    let part1Result = (rules, updates) ||> part1
+    printfn "Part 1: %d" part1Result
+
+    let part2Result = (rules, updates) ||> part2
+    printfn "Part 2: %d" part2Result
+
+    stopwatch.Stop()
+    printfn "Elapsed time: %A" stopwatch.Elapsed
 
     0

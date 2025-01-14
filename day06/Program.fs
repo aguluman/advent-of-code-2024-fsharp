@@ -1,5 +1,7 @@
 ﻿open Xunit
 open FsUnit.Xunit
+open System.Collections.Generic
+open System.Threading.Tasks
 
 type Direction = 
     | Up
@@ -22,8 +24,6 @@ let part1 (map: char[][]) =
         failwith "Invalid map: not all rows have the same length"
 
     let rec forward (i, j) dir history =
-        printfn "forward called with i=%d, j=%d, dir=%A, history=%A" i j dir history
-
         match dir with
         | Up -> if i >= 1 then Some(i - 1, j) else None
         | Right -> if j < n - 1 then Some(i, j + 1) else None
@@ -36,53 +36,75 @@ let part1 (map: char[][]) =
                 else
                     (ni, nj, dir, (ni, nj) :: history)
 
-            forward (ni, nj) nd nh)
-        |> Option.defaultWith (fun () -> history |> List.distinct |> List.length)
+            (ni, nj, nd, nh))
+        |> Option.defaultWith (fun () -> (i, j, dir, history))
+
+    let rec loop (i, j, dir, history) =
+        let (ni, nj, nd, nh) = forward (i, j) dir history
+
+        if (ni, nj) = (i, j) && dir = nd then
+            history |> List.distinct |> List.length
+        else
+            loop (ni, nj, nd, nh)
 
     let si, sj =
         List.allPairs [ 0 .. (n - 1) ] [ 0 .. (n - 1) ]
         |> List.find (fun (i, j) -> map[i][j] = '^')
 
-    forward (si, sj) Up [ (si, sj) ]
+    loop (si, sj, Up, [ (si, sj) ])
     
-(*
-let part2 (map: char[][]) = 
+
+let part2 (map: char[][]) =
     let n = map.Length
     map |> Array.iter (fun row -> row.Length |> should equal n)
 
-    let rec findLoop (map: char[][]) (i, j) dir history = 
-        match dir with
-        | Up -> if i >= 1 then Some(i - 1, j) else None
-        | Right -> if j + 1 < n then Some(i, j + 1) else None
-        | Down -> if i + 1 < n then Some(i + 1, j) else None
-        | Left -> if j >= 1 then Some(i, j - 1) else None
-        |> Option.map (fun (ni, nj) -> 
-            let ni, nj, nd = 
-                if map[ni][nj] = '#' then 
-                    (i, j, dir.Next())
+    let findLoop (map: char[][]) (i, j) dir =
+        let history = HashSet<(int * int * Direction)>()
+        let stack = Queue<(int * int * Direction)>()
+        stack.Enqueue((i, j, dir))
+        let mutable foundLoop = false
+
+        while not foundLoop && stack.Count > 0 do
+            let (i, j, dir) = stack.Dequeue()
+
+            let nextPos =
+                match dir with
+                | Up -> if i >= 1 then Some(i - 1, j) else None
+                | Right -> if j + 1 < n then Some(i, j + 1) else None
+                | Down -> if i + 1 < n then Some(i + 1, j) else None
+                | Left -> if j >= 1 then Some(i, j - 1) else None
+
+            match nextPos with
+            | Some(ni, nj) ->
+                let ni, nj, nd =
+                    if map[ni][nj] = '#' then
+                        (i, j, dir.Next())
+                    else
+                        (ni, nj, dir)
+
+                if history.Contains((ni, nj, nd)) then
+                    foundLoop <- true
                 else
-                    (ni, nj, dir)
-                    
-            if Set.contains (ni, nj, nd) history then 
-                true
-            else
-                findLoop map (ni, nj) nd (Set.add (ni, nj, nd) history))
-        |> Option.defaultValue false
+                    history.Add((ni, nj, nd)) |> ignore
+                    stack.Enqueue((ni, nj, nd))
+            | None -> ()
+
+        foundLoop
 
     let si, sj =
-        List.allPairs [0 .. (n - 1) ] [ 0 .. (n - 1) ]
+        List.allPairs [0 .. (n - 1)] [0 .. (n - 1)]
         |> List.find (fun (i, j) -> map[i][j] = '^')
 
-    List.allPairs [0 .. (n - 1) ] [ 0 .. (n - 1) ]
-    |> List.filter (fun (i, j) -> 
+    List.allPairs [0 .. (n - 1)] [0 .. (n - 1)]
+    |> List.filter (fun (i, j) ->
         if map[i][j] = '.' then
             let row = map[i] |> Array.updateAt j '#'
             let newMap = map |> Array.updateAt i row
-            findLoop newMap (si, sj) Up (set [(si, sj, Up) ])
-        else 
+            findLoop newMap (si, sj) Up
+        else
             false)
     |> List.length
-*)
+
 let parse (input: string) =
     input.Split([| '\r'; '\n' |], System.StringSplitOptions.RemoveEmptyEntries)
     |> Array.map (fun row -> row.Trim().ToCharArray())
@@ -102,16 +124,26 @@ module Example =
 
     [<Fact>]
     let testPart1 () = parse input |> part1 |> should equal 41
-(*
+
     [<Fact>]
-    let testPart2 () = parse input |> part2 |> should equal 6 *)
+    let testPart2 () = parse input |> part2 |> should equal 6 
+
+open System.Diagnostics
 
 [<EntryPoint>]
 let main _ = 
     let input = stdin.ReadToEnd().TrimEnd()
     let map = parse input 
 
-    map |> part1 |> printfn "Part 1: %d"
-    (*map |> part2 |> printfn "Part 2: %d" *)
+    let stopwatch = Stopwatch.StartNew()
+
+    let part1Result = map |> part1
+    printfn "Part 1: %d" part1Result
+
+    let part2Result = map |> part2
+    printfn "Part 2: %d" part2Result
+
+    stopwatch.Stop()
+    printfn "Elapsed time: %A" stopwatch.Elapsed
 
     0
