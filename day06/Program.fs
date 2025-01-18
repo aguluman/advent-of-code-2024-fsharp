@@ -39,7 +39,7 @@ let part1 (map: char[][]) =
         |> Option.defaultWith (fun () -> (i, j, dir, history))
 
     let rec loop (i, j, dir, history) =
-        let (ni, nj, nd, nh) = forward (i, j) dir history
+        let ni, nj, nd, nh = forward (i, j) dir history
 
         if (ni, nj) = (i, j) && dir = nd then
             history |> List.distinct |> List.length
@@ -58,13 +58,13 @@ let part2 (map: char[][]) =
     map |> Array.iter (fun row -> row.Length |> should equal n)
 
     let findLoop (map: char[][]) (i, j) dir =
-        let history = HashSet<(int * int * Direction)>()
-        let stack = Queue<(int * int * Direction)>()
+        let history = HashSet<int * int * Direction>()
+        let stack = Queue<int * int * Direction>()
         stack.Enqueue((i, j, dir))
         let mutable foundLoop = false
 
         while not foundLoop && stack.Count > 0 do
-            let (i, j, dir) = stack.Dequeue()
+            let i, j, dir = stack.Dequeue()
 
             let nextPos =
                 match dir with
@@ -141,12 +141,12 @@ let main _ =
     let stopwatch = Stopwatch.StartNew()
 
     let part1Result = map |> part1
-    printfn "Part 1: %d" part1Result
+    printfn $"Part 1: %d{part1Result}"
 
     let part2Result = map |> part2
-    printfn "Part 2: %d" part2Result
+    printfn $"Part 2: %d{part2Result}"
 
     stopwatch.Stop()
-    printfn "Elapsed time: %A" stopwatch.Elapsed
+    printfn $"Elapsed time: %A{stopwatch.Elapsed}"
 
     0
