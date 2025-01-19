@@ -2,5 +2,7 @@
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=0d664ceb_002Da9c6_002D4caa_002Dbea6_002D4a853c860206/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="testPart2" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::AF3FB150-8C03-4C96-9557-A7F0951FAEE9::net8.0::Program&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::655434F8-114F-4BC0-B2CF-2763494A19D4::net9.0::Program+Example.testPart1&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::655434F8-114F-4BC0-B2CF-2763494A19D4::net9.0::Program+Example.testPart2&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
