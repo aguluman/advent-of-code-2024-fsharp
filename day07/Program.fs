@@ -15,6 +15,20 @@ let part1 (equations: (int64 * int64 seq) seq) =
         collectResult (List.tail a) [ List.head a ] |> List.contains s)
     |> Seq.sumBy fst
 
+let part2 (equations: (int64 * int64 seq) seq) = 
+    let rec collectResult a acc = 
+        match a with 
+        | [] -> acc 
+        | h :: t -> 
+            let newAcc = acc |> List.collect (fun s -> [s + h; s * h; int64 $"{s}{h}" ])
+            collectResult t newAcc
+    
+    equations
+    |> Seq.filter (fun (s, a) -> 
+        let a = List.ofSeq a
+        collectResult (List.tail a) [ List.head a] |> List.contains s)
+    |> Seq.sumBy fst
+
 
 let parse (input: string) = 
     input.Split("\n")
@@ -36,8 +50,12 @@ module Example =
 292: 11 6 16 20"
 
     [<Fact>]
-    let testPart () = 
+    let testPart1 () = 
         parse input |> part1 |>  should equal 3749L
+
+    [<Fact>]
+    let testPart2 () =
+        parse input |> part2 |> should equal 11387L
 
 open System.Diagnostics
 
@@ -49,6 +67,8 @@ let main _ =
     let stopwatch: Stopwatch = Stopwatch.StartNew()
 
     equations |> part1 |> printfn "Part 1: %d"
+
+    equations |> part2 |> printfn "Part 2: %d"
 
     stopwatch.Stop()
     printfn $"Elapsed time: %A{stopwatch.Elapsed}"
