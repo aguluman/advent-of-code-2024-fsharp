@@ -5,24 +5,23 @@
 ```
 $ dotnet test
 ```
-# How to run the input datsets.
+## How to run the input datasets.
 
 ```
 $ type input.txt | dotnet run
 ```
 
-# For Faster compilation time, 
+## For Faster compilation time, 
 ```
 $ dotnet build -c Release
 ```
 
-# How to run the input datsets.
+### How to run the input datsets.
 
 ```
 $ cd bin\Release\netX.X
 ```
 
-# For Faster compilation time, 
 ```
-type "C:\***\******\****\input.txt" | .\day06.exe
+type "C:\***\******\****\input.txt" | .\day**.exe
 ```
