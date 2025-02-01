@@ -16,8 +16,6 @@ $ type input.txt | dotnet run
 $ dotnet build -c Release
 ```
 
-### How to run the input datsets.
-
 ```
 $ cd bin\Release\netX.X
 ```
