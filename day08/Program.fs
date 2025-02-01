@@ -1,54 +1,56 @@
 ﻿open Xunit
 open FsUnit.Xunit
 
-let antinodePositions (n: int) (i, j) (i', j') =
-    if (i, j) = (i', j') then
+let calculateAntinodePositions (gridSize: int) (startRow, startColumn) (endRow, endColumn) =
+    if (startRow, startColumn) = (endRow, endColumn) then
         []
     else
-        let di, dj = i' - i, j' - j
+        let rowStep, columnStep = endRow - startRow, endColumn - startColumn
 
-        (i', j')
-        |> List.unfold (fun (i', j') ->
-            let ni, nj = i' + di, j' + dj
+        (endRow, endColumn)
+        |> List.unfold (fun (currentRow, currentColumn) ->
+            let nextRow, nextColumn = currentRow + rowStep, currentColumn + columnStep
 
-            if 0 <= ni && ni < n && 0 <= nj && nj < n then
-                Some((ni, nj), (ni, nj))
+            if nextRow >= 0 && nextRow < gridSize && nextColumn >= 0 && nextColumn < gridSize 
+            then
+                Some((nextRow, nextColumn), (nextRow, nextColumn))
             else
                 None)
 
-let solve (map: char[][]) mapping =
-    let n = map.Length
-    map |> Array.iter (fun row -> row.Length |> should equal n)
+let solveGrid (grid: char[][]) positionMapper =
+    let gridSize = grid.Length
+    grid |> Array.iter (fun row -> row.Length |> should equal gridSize)
 
     [ '0' .. '9' ]
     |> List.append [ 'a' .. 'z' ]
     |> List.append [ 'A' .. 'Z' ]
-    |> List.map (fun c ->
-        let positions =
-            List.allPairs [ 0 .. (n - 1) ] [ 0 .. (n - 1) ]
-            |> List.filter (fun (i, j) -> map[i][j] = c)
+    |> List.map (fun char ->
+        let findCharPositions =
+            List.allPairs [ 0 .. (gridSize - 1) ] [ 0 .. (gridSize - 1) ]
+            |> List.filter (fun (row, column) -> grid[row][column] = char)
 
-        let newPositions =
-            List.allPairs positions positions
-            |> List.collect (fun ((i, j), (i', j')) -> mapping n (i, j) (i', j'))
+        let mappedPoints =
+            List.allPairs findCharPositions findCharPositions
+            |> List.collect (fun ((r1, c1), (r2, c2)) ->
+                positionMapper gridSize (r1, c1) (r2, c2))
 
-        set newPositions)
+        set mappedPoints)
 
     |> Set.unionMany
     |> Set.count
 
-let part1 (map: char[][]) =
-    solve map (fun n (i, j) (i', j') ->
+let part1 (grid: char[][]) =
+    solveGrid grid (fun size (r1, c1) (r2, c2) ->
         //only head
-        match antinodePositions n (i, j) (i', j') with
+        match calculateAntinodePositions size (r1, c1) (r2, c2) with
         | [] -> []
-        | h :: _ -> [ h ])
-    
-let part2 (map: char[][]) =
-    solve map (fun n (i, j) (i', j') ->
-        let t = antinodePositions n (i, j) (i', j')
+        | firstPosition :: _ -> [ firstPosition ])
+
+let part2 (grid: char[][]) =
+    solveGrid grid (fun size (r1, c1) (r2, c2) ->
+        let tail = calculateAntinodePositions size (r1, c1) (r2, c2)
         //It seems that the original antenna at (i', j') is also included in the count.
-        (i', j') :: t)
+        (r2, c2) :: tail)
 
 let parse (input: string) =
     input.Split([| '\r'; '\n' |], System.StringSplitOptions.RemoveEmptyEntries)
@@ -81,14 +83,14 @@ open System.Diagnostics
 [<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
-    let map = parse input
+    let grid = parse input
 
     let stopwatch: Stopwatch = Stopwatch.StartNew()
 
-    map |> part1 |> printfn "Part 1: %d"
-    map |> part2 |> printfn "Part 2: %d"
-    
+    grid |> part1 |> printfn "Part 1: %d"
+    grid |> part2 |> printfn "Part 2: %d"
+
     stopwatch.Stop()
     //printfn $"Elapsed time: %A{stopwatch.Elapsed}"
-    printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds}"
+    printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
     0
