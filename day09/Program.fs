@@ -37,17 +37,17 @@ let part2 (disk: Block[]) =
         else 
             match disk[rightPos] with
             | Free -> compact (rightPos - 1) disk
-            | Occupied fileId ->
+            | Occupied id ->
                 // Find length of contiguous occupied blocks
                 let length = 
                     let mutable count = 0
-                    while count <= rightPos && disk[rightPos - count] = Occupied fileId do
+                    while count <= rightPos && disk[rightPos - count] = Occupied id do
                         count <- count + 1
                     count
                 
                 let newR = rightPos - length
 
-                // Find first position that can fit length Free blocks
+                // (Find Free Space) Find first position that can fit length Free blocks
                 let rec findFreePos leftPos =
                     if leftPos > rightPos then 
                         None
@@ -61,13 +61,14 @@ let part2 (disk: Block[]) =
                         else 
                             findFreePos (leftPos + 1)
 
+                //Block Movement
                 match findFreePos 0 with
                 | None -> 
                     compact newR disk
                 | Some leftPos ->
-                    // Swap blocks
-                    for d in 0..length-1 do
-                        disk[leftPos + d] <- Occupied fileId
+                    // Swap blocks to new position
+                    for d in 0..length - 1 do
+                        disk[leftPos + d] <- Occupied id
                         disk[newR + 1 + d] <- Free
                     compact newR disk
 
