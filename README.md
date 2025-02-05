@@ -1,6 +1,6 @@
 [Advent of Code 2024](https://adventofcode.com/2024) in F#
 
-# Test
+# To validate the functions with the Test-Cases
 
 ```
 $ dotnet test
@@ -8,7 +8,7 @@ $ dotnet test
 ## How to run the input datasets.
 
 ```
-$ type input.txt | dotnet run
+$ type "C:\***\******\****\input.txt" | dotnet run
 ```
 
 ## For Faster compilation time, 
