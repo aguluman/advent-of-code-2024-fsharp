@@ -19,7 +19,10 @@ let part1 (map: int[][]) =
 
     List.allPairs [ 0 .. (n - 1) ] [ 0 .. (n - 1) ]
     |> List.filter (fun (i, j) -> map[i][j] = 0)
-    |> List.sumBy (fun (i, j) -> dfs (i, j) |> Seq.filter (fun (i, j) -> map[i][j] = 9) |> Seq.length)
+    |> List.sumBy (fun (i, j) -> 
+        dfs (i, j) 
+        |> Seq.filter (fun (i, j) -> map[i][j] = 9) 
+        |> Seq.length)
 
 
 
