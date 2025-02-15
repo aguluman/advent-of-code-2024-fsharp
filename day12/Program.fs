@@ -1,25 +1,13 @@
 ﻿open Xunit
 open FsUnit.Xunit
-
-type Direction = 
-    | Up
-    | Right
-    | Down
-    | Left
-
-let directionToOffset = function
-    | Up -> (-1, 0)
-    | Right -> (0, 1)
-    | Down -> (1, 0)
-    | Left -> (0, -1)
+open System.Diagnostics
 
 
-let rec region (map: char[][]) (i,j) acc =
-    (Set.add (i, j) acc, [Up; Right; Down; Left])
-    ||> List.fold (fun acc direction -> 
-        let di, dj = directionToOffset direction
+let rec region (map: char[][]) (i, j) acc =
+    (Set.add (i, j) acc, [ (-1, 0); (0, -1); (1, 0); (0, 1) ])
+    ||> List.fold (fun acc (di, dj) ->
         let ni, nj = i + di, j + dj
-        
+
         if
             0 <= ni
             && ni < map.Length
@@ -27,10 +15,12 @@ let rec region (map: char[][]) (i,j) acc =
             && nj < map[i].Length
             && map[i][j] = map[ni][nj]
             && not (Set.contains (ni, nj) acc)
-        then 
+        then
             region map (ni, nj) acc
-        else 
-            acc) 
+        else
+            acc)
+
+
 
 let solve (map: char[][]) calcPrice = 
     let n = map.Length
@@ -53,24 +43,24 @@ let part1 (map: char[][]) =
 
         let perimeter =
             positions
-            |> Seq.sumBy (fun (i, j) -> 
-            [ Up; Right; Down; Left ]
-            |> List.sumBy (fun direction -> 
-                let (di, dj) = directionToOffset direction
-                let ni, nj = i + di, j + dj
-                
-                if
-                    0 <= ni
-                    && ni < map.Length
-                    && 0 <= nj
-                    && nj < map[ni].Length
-                    && map[i][j] = map[ni][nj]
-                then
-                    0
-                else
-                    1))
-        
+            |> Seq.sumBy (fun (i, j) ->
+                [ (-1, 0); (0, -1); (1, 0); (0, 1) ]
+                |> List.sumBy (fun (di, dj) ->
+                    let ni, nj = i + di, j + dj
+
+                    if
+                        0 <= ni
+                        && ni < map.Length
+                        && 0 <= nj
+                        && nj < map[ni].Length
+                        && map[i][j] = map[ni][nj]
+                    then
+                        0
+                    else
+                        1))
+            
         area * perimeter
+        
     solve map calcPrice
 
 let part2 (map: char[][]) = 
@@ -117,7 +107,89 @@ let part2 (map: char[][]) =
 let parse (input: string) =
     input.Split("\n") |> Array.map (fun row -> row.Trim().ToCharArray())
 
-open System.Diagnostics
+
+
+module Example =
+    type Small() =
+        let input =
+            "AAAA
+BBCD
+BBCC
+EEEC"
+
+        [<Fact>]
+        let testPart1 () =
+            parse input |> part1 |> should equal 140
+
+        [<Fact>]
+        let testPart2 () = parse input |> part2 |> should equal 80
+
+    type OX() =
+        let input =
+            "OOOOO
+OXOXO
+OOOOO
+OXOXO
+OOOOO"
+
+        [<Fact>]
+        let testPart1 () =
+            parse input |> part1 |> should equal 772
+
+        [<Fact>]
+        let testPart2 () =
+            parse input |> part2 |> should equal 436
+
+    type EX() =
+        let input =
+            "EEEEE
+EXXXX
+EEEEE
+EXXXX
+EEEEE"
+
+        [<Fact>]
+
+        let testPart2 () =
+            parse input |> part2 |> should equal 236
+
+    type AB() =
+        let input =
+            "AAAAAA
+AAABBA
+AAABBA
+ABBAAA
+ABBAAA
+AAAAAA"
+
+        [<Fact>]
+
+        let testPart2 () =
+            parse input |> part2 |> should equal 368
+
+    type Large() =
+        let input =
+            "RRRRIICCFF
+RRRRIICCCF
+VVRRRCCFFF
+VVRCCCJFFF
+VVVVCJJCFE
+VVIVCCJJEE
+VVIIICJJEE
+MIIIIIJJEE
+MIIISIJEEE
+MMMISSJEEE"
+
+        [<Fact>]
+        let testPart1 () =
+            parse input |> part1 |> should equal 1930
+
+        [<Fact>]
+        let testPart2 () =
+            parse input |> part2 |> should equal 1206
+
+
+
 [<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
