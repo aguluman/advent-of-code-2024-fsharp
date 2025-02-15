@@ -1,4 +1,4 @@
-﻿open Xunit
+open Xunit
 open FsUnit.Xunit
 open System.Diagnostics
 
