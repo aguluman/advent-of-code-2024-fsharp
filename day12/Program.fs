@@ -2,106 +2,108 @@
 open FsUnit.Xunit
 open System.Diagnostics
 
+/// <summary>
+/// Garden Groups - Day 12 Solution
+/// This module solves the puzzle of calculating fencing costs for garden regions.
+/// </summary>
 
-let rec region (map: char[][]) (i, j) acc =
-    (Set.add (i, j) acc, [ (-1, 0); (0, -1); (1, 0); (0, 1) ])
-    ||> List.fold (fun acc (di, dj) ->
-        let ni, nj = i + di, j + dj
 
-        if
-            0 <= ni
-            && ni < map.Length
-            && 0 <= nj
-            && nj < map[i].Length
-            && map[i][j] = map[ni][nj]
-            && not (Set.contains (ni, nj) acc)
-        then
-            region map (ni, nj) acc
+
+/// Finds all connected garden plots of the same type starting from a given position
+/// Returns a set of coordinates representing the entire region
+let rec findConnectedGardenPlots (garden: char[][]) (row, col) visitedPlots =
+    let directions = [(-1, 0); (0, -1); (1, 0); (0, 1)]  // up, left, down, right
+    
+    (Set.add (row, col) visitedPlots, directions)
+    ||> List.fold (fun visited (deltaRow, deltaCol) ->
+        let newRow, newCol = row + deltaRow, col + deltaCol
+        
+        // Check if the new position is valid and has same plant type
+        if 0 <= newRow && newRow < garden.Length &&
+           0 <= newCol && newCol < garden[row].Length &&
+           garden[row][col] = garden[newRow][newCol] &&
+           not (Set.contains (newRow, newCol) visited) then
+            findConnectedGardenPlots garden (newRow, newCol) visited
         else
-            acc)
+            visited)
 
 
+/// Calculates the total fencing cost for all regions in the garden
+let calculateTotalFencingCost (garden: char[][]) calculateRegionPrice = 
+    let gardenSize = garden.Length
+    // Verify garden is square
+    garden |> Array.iter (fun row -> row.Length |> should equal gardenSize)
 
-let solve (map: char[][]) calcPrice = 
-    let n = map.Length
-    map |> Array.iter (fun row -> row.Length |> should equal n)
-
-    (Set.empty, List.allPairs [ 0 .. (n - 1) ] [ 0 .. (n - 1) ])
-    ||> List.mapFold (fun seen  (i, j) -> 
-        if Set.contains (i, j) seen then
-            0, seen
+    // Process each plot and calculate costs
+    (Set.empty, List.allPairs [0 .. (gardenSize - 1)] [0 .. (gardenSize - 1)])
+    ||> List.mapFold (fun processedPlots (row, col) -> 
+        if Set.contains (row, col) processedPlots then
+            0, processedPlots  // Skip if already processed
         else
-            let r = region map (i, j) Set.empty
-            calcPrice r, Set.union seen r)
+            let region = findConnectedGardenPlots garden (row, col) Set.empty
+            calculateRegionPrice region, Set.union processedPlots region)
     |> fst
     |> List.sum
 
-
-let part1 (map: char[][]) = 
-    let calcPrice positions =
-        let area = Seq.length positions
-
-        let perimeter =
-            positions
-            |> Seq.sumBy (fun (i, j) ->
-                [ (-1, 0); (0, -1); (1, 0); (0, 1) ]
-                |> List.sumBy (fun (di, dj) ->
-                    let ni, nj = i + di, j + dj
-
-                    if
-                        0 <= ni
-                        && ni < map.Length
-                        && 0 <= nj
-                        && nj < map[ni].Length
-                        && map[i][j] = map[ni][nj]
-                    then
-                        0
-                    else
-                        1))
-            
-        area * perimeter
+/// Part 1: Calculate fence price based on area × perimeter
+let part1 (garden: char[][]) = 
+    let calculateRegionPrice region =
+        let area = Seq.length region
         
-    solve map calcPrice
+        // Calculate perimeter by counting exposed sides
+        let perimeter =
+            region
+            |> Seq.sumBy (fun (row, col) ->
+                [(-1, 0); (0, -1); (1, 0); (0, 1)]  // Check all four sides
+                |> List.sumBy (fun (deltaRow, deltaCol) ->
+                    let adjacentRow, adjacentCol = row + deltaRow, col + deltaCol
+                    
+                    if 0 <= adjacentRow && adjacentRow < garden.Length &&
+                       0 <= adjacentCol && adjacentCol < garden[row].Length &&
+                       garden[row][col] = garden[adjacentRow][adjacentCol] then
+                        0  // Side is connected to same plant type
+                    else
+                        1  // Side needs fencing
+                ))
+        
+        area * perimeter
 
-let part2 (map: char[][]) = 
-    let calcPrice positions = 
-        let area = Seq.length positions
+    calculateTotalFencingCost garden calculateRegionPrice
 
-        let intersections = 
-            positions 
-            |> Seq.collect (fun (i, j) -> [ (i, j); (i + 1, j); (i, j + 1); (i + 1, j + 1)])
+/// Part 2: Calculate fence price based on area × number of sides
+let part2 (garden: char[][]) = 
+    let calculateRegionPrice region = 
+        let area = Seq.length region
+
+        // Get all corner points of the region
+        let cornerPoints = 
+            region 
+            |> Seq.collect (fun (row, col) -> 
+                [(row, col); (row + 1, col); (row, col + 1); (row + 1, col + 1)])
             |> Set.ofSeq
 
-        let countCorner = //number of sides
-            intersections 
-            |> Seq.sumBy (fun (i, j) -> 
-                let surrounding = 
-                    Set.intersect (set [ (i - 1, j - 1); (i - 1, j); (i, j - 1); (i, j) ]) positions
+        // Count number of sides by analyzing corner configurations
+        let sideCount = 
+            cornerPoints 
+            |> Seq.sumBy (fun (row, col) -> 
+                let surroundingPlots = 
+                    Set.intersect 
+                        (set [(row - 1, col - 1); (row - 1, col); 
+                             (row, col - 1); (row, col)]) 
+                        region
                 
-                let size = Set.count  surrounding
+                let plotCount = Set.count surroundingPlots
                 
-                if size = 3 then
-                    // ## #. .# ##
-                    // #. ## ## .#
-                    1
-                else if size = 1 then 
-                    // #. .. .. .#
-                    // .. #. .# ..
-                    1
-                else if surrounding = set [ (i - 1, j - 1); (i, j) ] then
-                    // #.
-                    // .#
-                    2
-                else if surrounding = set [ (i - 1, j); (i, j - 1) ] then
-                    // .#
-                    // #.
-                    2
-                else
-                    0)
+                match plotCount with
+                | 3 -> 1  // Three connected plots form one side
+                | 1 -> 1  // Single plot forms one side
+                | _ when surroundingPlots = set [(row - 1, col - 1); (row, col)] -> 2  // Diagonal connection
+                | _ when surroundingPlots = set [(row - 1, col); (row, col - 1)] -> 2  // Other diagonal
+                | _ -> 0)
             
-        area * countCorner
+        area * sideCount
 
-    solve map calcPrice
+    calculateTotalFencingCost garden calculateRegionPrice
 
 
 let parse (input: string) =
