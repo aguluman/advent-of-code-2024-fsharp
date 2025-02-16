@@ -2,17 +2,30 @@
 open Xunit
 open FsUnit.Xunit
 
+/// Represents a machine with two buttons and a prize location
 type Machine =
     { ButtonA: Button
       ButtonB: Button
       Prize: Prize }
 
+/// Represents a button's movement pattern
 and Button = { AddX: int; AddY: int }
+
+/// Represents prize coordinates
 and Prize = { X: int; Y: int }
 
+
+/// Find minimum value in a list safely
+/// @returns Option containing minimum value, None if list is empty
 let tryMin list' =
     if List.isEmpty list' then None else Some(List.min list')
 
+
+
+/// Calculate minimum tokens needed for Part 1
+/// Tries combinations of button presses (max 100 each)
+/// @param machines Sequence of machines to solve
+/// @returns Sum of minimum token costs for winnable prizes
 let part1 (machines: Machine seq) =
     machines
     |> Seq.sumBy
@@ -30,6 +43,10 @@ let part1 (machines: Machine seq) =
             |> Option.defaultValue 0)
 
 
+/// Calculate minimum tokens for Part 2 using linear equation solving
+/// For large coordinates (offset by 10^13), uses determinants to solve the system
+/// @param machines Sequence of machines to solve
+/// @returns Sum of minimum token costs (as int64) for winnable prizes
 let part2 (machines: Machine seq) =
     machines
     |> Seq.sumBy
@@ -55,6 +72,11 @@ let part2 (machines: Machine seq) =
                     0L)
 
 
+/// Parse input string into sequence of machines
+/// Format example:
+/// Button A: X+94, Y+34
+/// Button B: X+22, Y+67
+/// Prize: X=8400, Y=5400
 let parse (input: string) =
     let parseButton (line: string) expectedButton =
         let pattern = $@"^{expectedButton}: X\+(\d+), Y\+(\d+)$"
