@@ -22,7 +22,8 @@ let rec findConnectedGardenPlots (garden: char[][]) (row, col) visitedPlots =
         if 0 <= newRow && newRow < garden.Length &&
            0 <= newCol && newCol < garden[row].Length &&
            garden[row][col] = garden[newRow][newCol] &&
-           not (Set.contains (newRow, newCol) visited) then
+           not (Set.contains (newRow, newCol) visited)
+        then
             findConnectedGardenPlots garden (newRow, newCol) visited
         else
             visited)
@@ -60,7 +61,8 @@ let part1 (garden: char[][]) =
                     
                     if 0 <= adjacentRow && adjacentRow < garden.Length &&
                        0 <= adjacentCol && adjacentCol < garden[row].Length &&
-                       garden[row][col] = garden[adjacentRow][adjacentCol] then
+                       garden[row][col] = garden[adjacentRow][adjacentCol]
+                    then
                         0  // Side is connected to same plant type
                     else
                         1  // Side needs fencing
