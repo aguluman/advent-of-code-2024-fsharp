@@ -56,54 +56,46 @@ let part2 (machines: Machine seq) =
 
 
 let parse (input: string) =
-    input.Split("\n\n", System.StringSplitOptions.RemoveEmptyEntries)
+    let parseButton (line: string) expectedButton =
+        let pattern = $@"^{expectedButton}: X\+(\d+), Y\+(\d+)$"
+        let m = Regex.Match(line, pattern)
+        if not m.Success then
+            failwithf $"Invalid button format for %s{expectedButton}: %s{line}"
+        { AddX = int m.Groups[1].Value
+          AddY = int m.Groups[2].Value }
+
+    let parsePrize (line: string) =
+        let pattern = @"^Prize: X=(\d+), Y=(\d+)$"
+        let m = Regex.Match(line, pattern)
+        if not m.Success then
+            failwithf $"Invalid prize format: %s{line}"
+        { X = int m.Groups[1].Value
+          Y = int m.Groups[2].Value }
+
+    input.Trim().Replace("\r\n", "\n").Split("\n\n")
     |> Array.map (fun section ->
-        let lines =
-            section.Split('\n', System.StringSplitOptions.RemoveEmptyEntries)
+        let lines = 
+            section.Split('\n')
             |> Array.map (fun s -> s.Trim())
-            |> Array.filter (not << System.String.IsNullOrWhiteSpace)
-
-        if lines.Length <> 3 then
-            printfn $"Debug: Found %d{lines.Length} lines in section: %s{section}"
-            failwithf $"Invalid section format: Expected exactly 3 lines, got %d{lines.Length}"
-
-        let parseButton (line: string) expectedButton =
-            let pattern = $@"^{expectedButton}: X\+(\d+), Y\+(\d+)$"
-            let m = Regex.Match(line, pattern)
-
-            if not m.Success then
-                failwithf $"Invalid button format for %s{expectedButton}: %s{line}"
-
-            { AddX = int m.Groups[1].Value
-              AddY = int m.Groups[2].Value }
-
-        let parsePrize (line: string) =
-            let pattern = @"^Prize: X=(\d+), Y=(\d+)$"
-            let m = Regex.Match(line, pattern)
-
-            if not m.Success then
-                failwithf $"Invalid prize format: %s{line}"
-
-            { X = int m.Groups[1].Value
-              Y = int m.Groups[2].Value }
-
-        try
-            let buttonA = parseButton lines[0] "Button A"
-            let buttonB = parseButton lines[1] "Button B"
-            let prize = parsePrize lines[2]
-
-            { ButtonA = buttonA
-              ButtonB = buttonB
-              Prize = prize }
-
-        with e ->
-            printfn $"Error parsing section:\n%s{section}"
-            raise e)
-
+            |> Array.filter (fun s -> String.length s > 0)
+            |> Array.toList
+        
+        match lines with
+        | [buttonA; buttonB; prize] ->
+            try
+                { ButtonA = parseButton buttonA "Button A"
+                  ButtonB = parseButton buttonB "Button B"
+                  Prize = parsePrize prize }
+            with e ->
+                printfn $"Error parsing section:\n%s{section}"
+                raise e
+        | _ -> 
+            printfn $"Debug: Found %d{List.length lines} lines in section:\n%s{section}"
+            failwithf $"Invalid section format: Expected exactly 3 lines, got %d{List.length lines}")
 
 
 module Example =
-    let input = """Button A: X+94, Y+34
+    let input = "Button A: X+94, Y+34
 Button B: X+22, Y+67
 Prize: X=8400, Y=5400
 
@@ -117,7 +109,7 @@ Prize: X=7870, Y=6450
 
 Button A: X+69, Y+23
 Button B: X+27, Y+71
-Prize: X=18641, Y=10279"""
+Prize: X=18641, Y=10279"
 
     [<Fact>]
     let testPart1 () =
