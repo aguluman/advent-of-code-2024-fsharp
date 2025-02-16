@@ -82,7 +82,7 @@ let parse (input: string) =
         let pattern = $@"^{expectedButton}: X\+(\d+), Y\+(\d+)$"
         let m = Regex.Match(line, pattern)
         if not m.Success then
-            failwithf $"Invalid button format for %s{expectedButton}: %s{line}"
+            failwithf $"\n\nInvalid button format for %s{expectedButton}: %s{line}"
         { AddX = int m.Groups[1].Value
           AddY = int m.Groups[2].Value }
 
@@ -90,7 +90,7 @@ let parse (input: string) =
         let pattern = @"^Prize: X=(\d+), Y=(\d+)$"
         let m = Regex.Match(line, pattern)
         if not m.Success then
-            failwithf $"Invalid prize format: %s{line}"
+            failwithf $"\n\nInvalid prize format for Prize: %s{line}"
         { X = int m.Groups[1].Value
           Y = int m.Groups[2].Value }
 
@@ -109,11 +109,11 @@ let parse (input: string) =
                   ButtonB = parseButton buttonB "Button B"
                   Prize = parsePrize prize }
             with e ->
-                printfn $"Error parsing section:\n%s{section}"
+                printfn $"\n\nError parsing section:\n%s{section}"
                 raise e
         | _ -> 
-            printfn $"Debug: Found %d{List.length lines} lines in section:\n%s{section}"
-            failwithf $"Invalid section format: Expected exactly 3 lines, got %d{List.length lines}")
+            printfn $"\n\nDebug: Found %d{List.length lines} lines in section:\n%s{section}"
+            failwithf $"\n\nInvalid section format: Expected exactly 3 lines, got %d{List.length lines}")
 
 
 module Example =
