@@ -1,7 +1,7 @@
 module Day04
 
-open Xunit
-open FsUnit.Xunit
+open NUnit.Framework
+open FsUnit
 
 let getC i j (chars: char[][]) =
     if 0 <= i && i < chars.Length && 0 <= j && j < chars[i].Length then
@@ -68,11 +68,11 @@ SAXAMASAAA
 MAMMMXMMMM
 MXMXAXMASX"
 
-    [<Fact>]
-    let testPart1 () = parse input |> part1 |> should equal 18
+    [<Test>]
+    let ``testPart1`` () = parse input |> part1 |> should equal 18
 
-    [<Fact>]
-    let testPart2 () = parse input |> part2 |> should equal 9
+    [<Test>]
+    let ``testPart2`` () = parse input |> part2 |> should equal 9
 
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()

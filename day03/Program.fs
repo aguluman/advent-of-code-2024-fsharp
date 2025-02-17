@@ -1,7 +1,7 @@
 module Day03
 
-open Xunit
-open FsUnit.Xunit
+open NUnit.Framework
+open FsUnit
 
 type Instruction =
     | Multiply of int * int
@@ -91,19 +91,19 @@ module Example =
     let input2 = 
         "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))"
 
-    [<Fact>]
-    let testParse1 () =
+    [<Test>]
+    let ``testParse1`` () =
         parse1 input1 
         |> should equal [ (2, 4); (5, 5); (11, 8); (8, 5) ]
 
-    [<Fact>]
-    let testPart1 () =
+    [<Test>]
+    let ``testPart1`` () =
         parse1 input1 
         |> part1 
         |> should equal 161
 
-    [<Fact>]
-    let testParse2 () =
+    [<Test>]
+    let ``testParse2`` () =
         parse2 input2
         |> should
             equal
@@ -114,13 +114,13 @@ module Example =
               Enable
               Multiply(8, 5) ]
 
-    [<Fact>]
-    let testPart2 () =
+    [<Test>]
+    let ``testPart2`` () =
         parse2 input2 
         |> part2 
         |> should equal 48
 
-
+[<EntryPoint>]
 let main _ = 
     let input = stdin.ReadToEnd().TrimEnd()
 

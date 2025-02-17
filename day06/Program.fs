@@ -1,7 +1,7 @@
 module Day06
 
-open Xunit
-open FsUnit.Xunit
+open NUnit.Framework
+open FsUnit
 open System.Collections.Generic
 
 type Direction = 
@@ -127,14 +127,14 @@ module Example =
 #.........
 ......#..."
 
-    [<Fact>]
-    let testPart1 () = parse input |> part1 |> should equal 41
+    [<Test>]
+    let ``testPart1``() = parse input |> part1 |> should equal 41
 
-    [<Fact>]
-    let testPart2 () = parse input |> part2 |> should equal 6 
+    [<Test>]
+    let ``testPart2`` () = parse input |> part2 |> should equal 6 
 
 open System.Diagnostics
-
+[<EntryPoint>]
 let main _ = 
     let input = stdin.ReadToEnd().TrimEnd()
     let map = parse input 

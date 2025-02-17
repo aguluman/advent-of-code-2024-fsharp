@@ -1,7 +1,7 @@
 module Day12
 
-open Xunit
-open FsUnit.Xunit
+open NUnit.Framework
+open FsUnit
 open System.Diagnostics
 
 /// <summary>
@@ -123,12 +123,12 @@ BBCD
 BBCC
 EEEC"
 
-        [<Fact>]
-        let testPart1 () =
+        [<Test>]
+        let ``testPart1`` () =
             parse input |> part1 |> should equal 140
 
-        [<Fact>]
-        let testPart2 () = parse input |> part2 |> should equal 80
+        [<Test>]
+        let ``testPart2`` () = parse input |> part2 |> should equal 80
 
     type OX() =
         let input =
@@ -138,12 +138,12 @@ OOOOO
 OXOXO
 OOOOO"
 
-        [<Fact>]
-        let testPart1 () =
+        [<Test>]
+        let ``testPart1`` () =
             parse input |> part1 |> should equal 772
 
-        [<Fact>]
-        let testPart2 () =
+        [<Test>]
+        let ``testPart2`` () =
             parse input |> part2 |> should equal 436
 
     type EX() =
@@ -154,9 +154,9 @@ EEEEE
 EXXXX
 EEEEE"
 
-        [<Fact>]
+        [<Test>]
 
-        let testPart2 () =
+        let ``testPart2`` () =
             parse input |> part2 |> should equal 236
 
     type AB() =
@@ -168,9 +168,8 @@ ABBAAA
 ABBAAA
 AAAAAA"
 
-        [<Fact>]
-
-        let testPart2 () =
+        [<Test>]
+        let ``testPart2`` () =
             parse input |> part2 |> should equal 368
 
     type Large() =
@@ -186,14 +185,15 @@ MIIIIIJJEE
 MIIISIJEEE
 MMMISSJEEE"
 
-        [<Fact>]
-        let testPart1 () =
+        [<Test>]
+        let ``testPart1`` () =
             parse input |> part1 |> should equal 1930
 
-        [<Fact>]
-        let testPart2 () =
+        [<Test>]
+        let ``testPart2`` () =
             parse input |> part2 |> should equal 1206
-
+            
+[<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let map = parse input

@@ -1,7 +1,7 @@
 module Day11
 
-open Xunit
-open FsUnit.Xunit
+open NUnit.Framework
+open FsUnit
 open System.Diagnostics
 
 
@@ -71,12 +71,12 @@ let parse (inputText: string) =
 module Example =
     let sampleInput = "125 17"
 
-    [<Fact>]
-    let testPart1 () =
+    [<Test>]
+    let ``testPart1`` () =
         parse sampleInput |> part1 |> should equal 55312
 
 
-
+[<EntryPoint>]
 let main _ = 
     let inputText = stdin.ReadToEnd().TrimEnd()
     let initialStones = parse inputText

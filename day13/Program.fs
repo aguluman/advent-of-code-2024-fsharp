@@ -1,8 +1,8 @@
 module Day13
 
 open System.Text.RegularExpressions
-open Xunit
-open FsUnit.Xunit
+open NUnit.Framework
+open FsUnit
 
 /// Represents a machine with two buttons and a prize location
 type Machine =
@@ -135,13 +135,13 @@ Button A: X+69, Y+23
 Button B: X+27, Y+71
 Prize: X=18641, Y=10279"
 
-    [<Fact>]
-    let testPart1 () =
+    [<Test>]
+    let ``testPart1`` () =
         parse input |> part1 |> should equal 480
 
 
 open System.Diagnostics
-
+[<EntryPoint>]
 let main _ =
     let input =
         stdin.ReadToEnd()

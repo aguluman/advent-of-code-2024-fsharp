@@ -1,7 +1,7 @@
 module Day07
 
-open Xunit 
-open FsUnit.Xunit
+open NUnit.Framework
+open FsUnit
 
 let part1 (equations: (int64 * int64 seq) seq) =
     let rec collectResult a acc =
@@ -51,16 +51,17 @@ module Example =
 21037: 9 7 18 13
 292: 11 6 16 20"
 
-    [<Fact>]
-    let testPart1 () = 
+    [<Test>]
+    let ``testPart1`` () = 
         parse input |> part1 |>  should equal 3749L
 
-    [<Fact>]
-    let testPart2 () =
+    [<Test>]
+    let ``testPart2`` () =
         parse input |> part2 |> should equal 11387L
 
 
 open System.Diagnostics
+[<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let equations = parse input

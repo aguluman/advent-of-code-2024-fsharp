@@ -1,7 +1,7 @@
 module Day10
 
-open Xunit
-open FsUnit.Xunit
+open NUnit.Framework
+open FsUnit
 open System.Diagnostics
 
 
@@ -71,12 +71,13 @@ module Example =
 01329801
 10456732"
 
-    [<Fact>]
-    let testpart1 () = parse input |> part1 |> should equal 36
+    [<Test>]
+    let ``testpart1`` () = parse input |> part1 |> should equal 36
 
-    [<Fact>]
-    let testpart2 () = parse input |> part2 |> should equal 81
+    [<Test>]
+    let ``testpart2`` () = parse input |> part2 |> should equal 81
 
+[<EntryPoint>]
 let main _ = 
     let input = stdin.ReadToEnd().TrimEnd()
     let map = parse input

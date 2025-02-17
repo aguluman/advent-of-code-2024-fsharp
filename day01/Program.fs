@@ -1,7 +1,7 @@
 module Day01
 
-open FsUnit.Xunit
-open Xunit
+open NUnit.Framework
+open FsUnit
 
 let part1 (locationIds: (int * int) seq) =
     let left, right = locationIds
@@ -47,12 +47,13 @@ module Example =
  3   9
  3   3"
          
-    [<Fact>]
-    let testPart1() = parse input |> part1 |> should equal 11
+    [<Test>]
+    let ``testPart1`` () = parse input |> part1 |> should equal 11
     
-    [<Fact>]
-    let testPart2() = parse input |> part2 |> should equal 31L
+    [<Test>]
+    let ``testPart2`` () = parse input |> part2 |> should equal 31L
     
+[<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let locationIds = parse input

@@ -1,7 +1,7 @@
 module Day05
 
-open Xunit
-open FsUnit.Xunit
+open NUnit.Framework
+open FsUnit
 
 let splitUpdates (rules: (int * int) seq) (updates: int seq seq) =
     let pages = rules |> Seq.collect (fun (p, q) -> [ p; q ]) |> Seq.distinct
@@ -9,8 +9,8 @@ let splitUpdates (rules: (int * int) seq) (updates: int seq seq) =
     Seq.allPairs pages pages
     |> Seq.iter (fun (p, q) ->
         //All pairs appear in rules 
-        Assert.True(p = q || Seq.contains (p, q) rules || Seq.contains (q, p) rules))
-
+        (p = q || Seq.contains (p, q) rules || Seq.contains (q, p) rules) |> should be True)
+        
     let following =
         (Map.empty, rules)
         ||> Seq.fold (fun acc (p, q) ->
@@ -123,16 +123,16 @@ module Example =
 61,13,29
 97,13,75,29,47"
 
-    [<Fact>]
-    let testPart1 () =
+    [<Test>]
+    let ``testPart1`` () =
         parse input ||> part1 |> should equal 143
 
-    [<Fact>]
-    let testPart2 () =
+    [<Test>]
+    let ``testPart2`` () =
         parse input ||> part2 |> should equal 123
 
 open System.Diagnostics
-
+[<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let rules, updates = parse input

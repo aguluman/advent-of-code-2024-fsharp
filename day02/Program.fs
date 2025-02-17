@@ -1,7 +1,7 @@
 module Day02
 
-open Xunit
-open FsUnit.Xunit
+open NUnit.Framework
+open FsUnit
 
 
 let isSafe (report: int seq) = 
@@ -39,13 +39,13 @@ module Example =
 8 6 4 4 1
 1 3 6 7 9"
 
-    [<Fact>]
-    let testPart1 () = parse input |> part1 |> should equal 2
+    [<Test>]
+    let ``testPart1`` () = parse input |> part1 |> should equal 2
 
-    [<Fact>]
-    let testPart2 () = parse input |> part2 |> should equal 4
+    [<Test>]
+    let ``testPart2`` () = parse input |> part2 |> should equal 4
 
-
+[<EntryPoint>]
 let main _ = 
     let input = stdin.ReadToEnd().TrimEnd()
     let reports = parse input

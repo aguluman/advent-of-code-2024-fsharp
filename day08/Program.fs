@@ -1,7 +1,7 @@
 module Day08
 
-open Xunit
-open FsUnit.Xunit
+open NUnit.Framework
+open FsUnit
 
 let calculateAntinodePositions (gridSize: int) (startRow, startColumn) (endRow, endColumn) =
     if (startRow, startColumn) = (endRow, endColumn) then
@@ -74,13 +74,14 @@ module Example =
 ............
 ............"
 
-    [<Fact>]
-    let testPart1 () = parse input |> part1 |> should equal 14
+    [<Test>]
+    let ``testPart1`` () = parse input |> part1 |> should equal 14
 
-    [<Fact>]
-    let testPart2 () = parse input |> part2 |> should equal 34
+    [<Test>]
+    let ``testPart2`` () = parse input |> part2 |> should equal 34
 
 open System.Diagnostics
+[<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let grid = parse input

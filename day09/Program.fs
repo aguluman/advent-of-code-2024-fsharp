@@ -1,7 +1,7 @@
 module Day09
 
-open Xunit
-open FsUnit.Xunit
+open NUnit.Framework
+open FsUnit
 
 type Block =
     | Free
@@ -88,16 +88,16 @@ let parse (input: string) =
 module Example = 
     let input = "2333133121414131402"
 
-    [<Fact>]
-    let testPart1 () = 
+    [<Test>]
+    let ``testPart1`` () = 
         parse input |> part1 |> should equal 1928L
 
-    [<Fact>]
-    let testPart2 () = 
+    [<Test>]
+    let ``testPart2`` () = 
         parse input |> part2 |> should equal 2858L
         
 open System.Diagnostics
-
+[<EntryPoint>]
 let main _ = 
     let input = stdin.ReadToEnd().TrimEnd()
     let disk = parse input
