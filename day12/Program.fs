@@ -114,7 +114,6 @@ let parse (input: string) =
     input.Split("\n") |> Array.map (fun row -> row.Trim().ToCharArray())
 
 
-
 module Example =
     type Small() =
         let input =
@@ -124,11 +123,12 @@ BBCC
 EEEC"
 
         [<Test>]
-        let ``testPart1`` () =
+        member public _.``testPart1``() =
             parse input |> part1 |> should equal 140
 
         [<Test>]
-        let ``testPart2`` () = parse input |> part2 |> should equal 80
+        member public _.``testPart2``() = 
+            parse input |> part2 |> should equal 80
 
     type OX() =
         let input =
@@ -139,11 +139,11 @@ OXOXO
 OOOOO"
 
         [<Test>]
-        let ``testPart1`` () =
+        member public _.``testPart1``() =
             parse input |> part1 |> should equal 772
 
         [<Test>]
-        let ``testPart2`` () =
+        member public _.``testPart2``() =
             parse input |> part2 |> should equal 436
 
     type EX() =
@@ -155,8 +155,7 @@ EXXXX
 EEEEE"
 
         [<Test>]
-
-        let ``testPart2`` () =
+        member public _.``testPart2``() =
             parse input |> part2 |> should equal 236
 
     type AB() =
@@ -169,7 +168,7 @@ ABBAAA
 AAAAAA"
 
         [<Test>]
-        let ``testPart2`` () =
+        member public _.``testPart2``() =
             parse input |> part2 |> should equal 368
 
     type Large() =
@@ -186,11 +185,11 @@ MIIISIJEEE
 MMMISSJEEE"
 
         [<Test>]
-        let ``testPart1`` () =
+        member public _.``testPart1``() =
             parse input |> part1 |> should equal 1930
 
         [<Test>]
-        let ``testPart2`` () =
+        member public _.``testPart2``() =
             parse input |> part2 |> should equal 1206
             
 [<EntryPoint>]
