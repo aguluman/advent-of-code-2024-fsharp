@@ -1,4 +1,6 @@
-﻿open Xunit
+module Day09
+
+open Xunit
 open FsUnit.Xunit
 
 type Block =
@@ -96,7 +98,6 @@ module Example =
         
 open System.Diagnostics
 
-[<EntryPoint>]
 let main _ = 
     let input = stdin.ReadToEnd().TrimEnd()
     let disk = parse input
@@ -107,6 +108,6 @@ let main _ =
     disk |> part2 |> printfn "Part 2: %d"
 
     stopwatch.Stop()
-    printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
-    
+    printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"   
+
     0

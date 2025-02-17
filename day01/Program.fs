@@ -1,4 +1,6 @@
-﻿open FsUnit.Xunit
+module Day01
+
+open FsUnit.Xunit
 open Xunit
 
 let part1 (locationIds: (int * int) seq) =
@@ -51,7 +53,6 @@ module Example =
     [<Fact>]
     let testPart2() = parse input |> part2 |> should equal 31L
     
-[<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let locationIds = parse input

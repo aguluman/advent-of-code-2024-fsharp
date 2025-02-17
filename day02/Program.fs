@@ -1,4 +1,6 @@
-﻿open Xunit
+module Day02
+
+open Xunit
 open FsUnit.Xunit
 
 
@@ -44,7 +46,6 @@ module Example =
     let testPart2 () = parse input |> part2 |> should equal 4
 
 
-[<EntryPoint>]
 let main _ = 
     let input = stdin.ReadToEnd().TrimEnd()
     let reports = parse input

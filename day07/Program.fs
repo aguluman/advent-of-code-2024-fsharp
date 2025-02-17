@@ -1,4 +1,6 @@
-﻿open Xunit 
+module Day07
+
+open Xunit 
 open FsUnit.Xunit
 
 let part1 (equations: (int64 * int64 seq) seq) =
@@ -57,9 +59,8 @@ module Example =
     let testPart2 () =
         parse input |> part2 |> should equal 11387L
 
-open System.Diagnostics
 
-[<EntryPoint>]
+open System.Diagnostics
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let equations = parse input
@@ -71,6 +72,6 @@ let main _ =
     equations |> part2 |> printfn "Part 2: %d"
 
     stopwatch.Stop()
-    printfn $"Elapsed time: %A{stopwatch.Elapsed}"
+    printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
 
     0

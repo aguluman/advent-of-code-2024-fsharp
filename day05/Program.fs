@@ -1,4 +1,6 @@
-﻿open Xunit
+module Day05
+
+open Xunit
 open FsUnit.Xunit
 
 let splitUpdates (rules: (int * int) seq) (updates: int seq seq) =
@@ -131,7 +133,6 @@ module Example =
 
 open System.Diagnostics
 
-[<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let rules, updates = parse input

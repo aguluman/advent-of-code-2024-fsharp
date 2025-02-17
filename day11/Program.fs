@@ -1,4 +1,6 @@
-﻿open Xunit
+module Day11
+
+open Xunit
 open FsUnit.Xunit
 open System.Diagnostics
 
@@ -73,7 +75,8 @@ module Example =
     let testPart1 () =
         parse sampleInput |> part1 |> should equal 55312
 
-[<EntryPoint>]
+
+
 let main _ = 
     let inputText = stdin.ReadToEnd().TrimEnd()
     let initialStones = parse inputText

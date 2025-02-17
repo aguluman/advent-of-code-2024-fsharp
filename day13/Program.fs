@@ -1,4 +1,6 @@
-﻿open System.Text.RegularExpressions
+module Day13
+
+open System.Text.RegularExpressions
 open Xunit
 open FsUnit.Xunit
 
@@ -140,7 +142,6 @@ Prize: X=18641, Y=10279"
 
 open System.Diagnostics
 
-[<EntryPoint>]
 let main _ =
     let input =
         stdin.ReadToEnd()
@@ -155,6 +156,6 @@ let main _ =
     machines |> part2 |> printfn "Part 2: %d"
 
     stopwatch.Stop()
-    printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
+    printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"   
 
     0

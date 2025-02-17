@@ -1,4 +1,6 @@
-﻿open Xunit
+module Day04
+
+open Xunit
 open FsUnit.Xunit
 
 let getC i j (chars: char[][]) =
@@ -72,7 +74,6 @@ MXMXAXMASX"
     [<Fact>]
     let testPart2 () = parse input |> part2 |> should equal 9
 
-[<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let chars = parse input

@@ -1,4 +1,6 @@
-﻿open Xunit
+module Day03
+
+open Xunit
 open FsUnit.Xunit
 
 type Instruction =
@@ -119,7 +121,6 @@ module Example =
         |> should equal 48
 
 
-[<EntryPoint>]
 let main _ = 
     let input = stdin.ReadToEnd().TrimEnd()
 

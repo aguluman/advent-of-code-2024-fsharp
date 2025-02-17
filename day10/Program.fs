@@ -1,4 +1,6 @@
-﻿open Xunit
+module Day10
+
+open Xunit
 open FsUnit.Xunit
 open System.Diagnostics
 
@@ -75,8 +77,6 @@ module Example =
     [<Fact>]
     let testpart2 () = parse input |> part2 |> should equal 81
 
-
-[<EntryPoint>] 
 let main _ = 
     let input = stdin.ReadToEnd().TrimEnd()
     let map = parse input

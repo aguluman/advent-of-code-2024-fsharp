@@ -1,3 +1,5 @@
+module Day12
+
 open Xunit
 open FsUnit.Xunit
 open System.Diagnostics
@@ -192,9 +194,6 @@ MMMISSJEEE"
         let testPart2 () =
             parse input |> part2 |> should equal 1206
 
-
-
-[<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let map = parse input

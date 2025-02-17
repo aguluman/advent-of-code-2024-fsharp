@@ -1,4 +1,6 @@
-﻿open Xunit
+module Day08
+
+open Xunit
 open FsUnit.Xunit
 
 let calculateAntinodePositions (gridSize: int) (startRow, startColumn) (endRow, endColumn) =
@@ -79,8 +81,6 @@ module Example =
     let testPart2 () = parse input |> part2 |> should equal 34
 
 open System.Diagnostics
-
-[<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let grid = parse input
@@ -91,6 +91,6 @@ let main _ =
     grid |> part2 |> printfn "Part 2: %d"
 
     stopwatch.Stop()
-    //printfn $"Elapsed time: %A{stopwatch.Elapsed}"
     printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
+
     0

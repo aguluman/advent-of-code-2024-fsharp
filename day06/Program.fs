@@ -1,4 +1,6 @@
-﻿open Xunit
+module Day06
+
+open Xunit
 open FsUnit.Xunit
 open System.Collections.Generic
 
@@ -133,20 +135,16 @@ module Example =
 
 open System.Diagnostics
 
-[<EntryPoint>]
 let main _ = 
     let input = stdin.ReadToEnd().TrimEnd()
     let map = parse input 
 
     let stopwatch = Stopwatch.StartNew()
 
-    let part1Result = map |> part1
-    printfn $"Part 1: %d{part1Result}"
-
-    let part2Result = map |> part2
-    printfn $"Part 2: %d{part2Result}"
+    map |> part1 |> printfn "Part 1: %d"
+    map |> part2 |> printfn "Part 2: %d"
 
     stopwatch.Stop()
-    printfn $"Elapsed time: %A{stopwatch.Elapsed}"
+    printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
 
     0
