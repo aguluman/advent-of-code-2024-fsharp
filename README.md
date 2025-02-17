@@ -1,4 +1,4 @@
-[Advent of Code 2024](https://adventofcode.com/2024) in F#
+[Advent of Code 2024](https://adventofcode.com/2024) in F# on Windows OS
 
 # To validate the functions with the Test-Cases
 
