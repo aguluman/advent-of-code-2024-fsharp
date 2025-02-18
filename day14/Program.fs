@@ -58,42 +58,42 @@ let part1 ((securityRobots, gridWidth, gridHeight): (Robot seq * int * int)) =
     (1, Seq.countBy id quadrantCounts)
     ||> Seq.fold (fun acc (_, count) -> acc * count) 
 
+open System
+open System.Text
 
-let part2 ((robots, w, h): (Robot seq * int * int)) =
+let part2 ((robots: Robot list, w: int, h: int)) =
     let rec search elapsed robots =
         if elapsed >= 1000 then
             ()
         else
-            let positions = robots |> Seq.map (fun robot -> robot.Position) |> Set.ofSeq
+            let positions = robots |> List.map (fun robot -> robot.Position) |> Set.ofList
 
-            let map =
-                Array.init h (fun i -> Array.init w (fun j -> if Set.contains (i, j) positions then '@' else ' '))
+            // Optimized grid creation (avoiding nested List operations)
+            let map = Array.init h (fun _ -> Array.create w ' ')
 
-            printfn "t = %d" elapsed
-            map |> Array.map System.String |> String.concat ("\n") |> printfn "%s"
-            printfn "\n\n\n\n\n"
+            // Fill the grid efficiently using Set lookup (O(1))
+            positions |> Set.iter (fun (row, col) -> 
+                if row >= 0 && row < h && col >= 0 && col < w then 
+                    map.[row].[col] <- '@'
+            )
 
-            search (elapsed + 1) (robots |> Seq.map (simulateRobotMovement 1 w h))
+            // Optimized printing using StringBuilder (avoids O(n²) string concatenation)
+            let sb = StringBuilder()
+            for row in map do
+                sb.AppendLine(new string(row)) |> ignore
+            printfn "t = %d\n%s" elapsed (sb.ToString())
+
+            search (elapsed + 1) (robots |> List.map (simulateRobotMovement 1 w h))
 
     search 0 robots
 
-    //You can see something like 
-    //ASCII art in this cycle.
-    // t = 81, 81 + w, 81 + 2w, 81 + 3w, ...
-    // t = 30, 30 + h, 30 + 2h, 30 + 3h, ...    
-
-    //Search within a suitable range.
-    [ 0..1000 ]
-    |> List.choose (fun p -> 
-        // 81 + p * w = 30 + q * h
+    // Optimized cycle calculation (avoids large lists)
+    let rec findFirstValid p =
         let numQ = (81 - 30) + p * w
-        if 
-            numQ % h = 0 
-        then 
-            Some(81 + p * w)
-        else 
-            None)
-    |> List.head
+        if numQ % h = 0 then 81 + p * w
+        else findFirstValid (p + 1)
+    
+    findFirstValid 0
 
 
 
@@ -162,7 +162,7 @@ let main _ =
     let stopwatch = Stopwatch.StartNew()
 
     (robots, 101, 103) |> part1 |> printfn "Part 1: %d"
-    (robots, 101, 103) |> part2 |> printfn "Part 2: %d"
+    (robots |> Array.toList, 101, 103) |> part2 |> printfn "Part 2: %d"
 
     stopwatch.Stop()
     printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"   
