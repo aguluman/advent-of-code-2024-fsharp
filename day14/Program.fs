@@ -2,7 +2,7 @@ module Day14
 
 open NUnit.Framework
 open FsUnit
-open System.Text.RegularExpressions
+open System.Text
 open System.Diagnostics
 
 type Robot = {
@@ -58,8 +58,6 @@ let part1 ((securityRobots, gridWidth, gridHeight): (Robot seq * int * int)) =
     (1, Seq.countBy id quadrantCounts)
     ||> Seq.fold (fun acc (_, count) -> acc * count) 
 
-open System
-open System.Text
 
 let part2 ((robots: Robot list, w: int, h: int)) =
     let rec search elapsed robots =
