@@ -207,8 +207,14 @@ let main _ =
 
     let stopwatch = Stopwatch.StartNew()
 
-    (robots, 101, 103) |> part1 |> printfn "Part 1: %d"
-    (robots |> Array.toList, 101, 103) |> part2 |> printfn "Part 2: %d"
+    (robots, 101, 103) 
+    |> part1 
+    |> printfn "Part 1: %d"
+
+
+    (robots |> Array.toList, 101, 103) 
+    |> part2 
+    |> printfn "Part 2: %d"
 
     stopwatch.Stop()
     printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"   
