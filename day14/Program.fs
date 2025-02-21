@@ -93,12 +93,18 @@ let part2 ((robots: Robot list, w: int, h: int)) =
             ()
         else
             // Get current positions of all robots
-            let positions = robots |> List.map (fun r -> r.Position) |> Set.ofList
+            let positions = 
+                robots 
+                |> List.map (fun r -> r.Position) 
+                |> Set.ofList
 
             // Create and populate visualization grid
             let map = Array2D.create h w ' '
             positions |> Set.iter (fun (row, col) -> 
-                if row >= 0 && row < h && col >= 0 && col < w then 
+                if 
+                    row >= 0 && row < h 
+                    && col >= 0 && col < w 
+                then 
                     map.[row, col] <- '@')
 
             // Display current state
