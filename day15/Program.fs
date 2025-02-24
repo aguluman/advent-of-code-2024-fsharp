@@ -5,100 +5,106 @@ open FsUnit
 open System.Text
 open System.Diagnostics
 
-type Cell = 
-    | Robot
-    | Box
-    | Wall
-    | Empty
+type Cell =
+    | Robot = 0
+    | Box = 1
+    | Wall = 2
+    | Empty = 3
 
-type Dir = 
+type Dir =
     | Up
     | Left
     | Down
     | Right
 
-let swap (i, j) (a: 'T[]) =
-    let x, y = a[i], a[j]
-    a |> Array.updateAt i y |> Array.updateAt j x
+let inline swap (i, j) (a: 'T[]) =
+    let temp = a[i]
+    a[i] <- a[j]
+    a[j] <- temp
 
 
-let transpose (a: 'T[][]) = 
-    let h, w = a.Length, a[0].Length
-    Array.init w (fun i -> Array.init h (fun j -> a[j][i]))
+let moveWithBox (map: Cell[][]) (ri: int) (rj: int) (di: int) (dj: int) =
+    let rec moveBoxTail (ri: int) (rj: int) (di: int) (dj: int) (cont: bool -> bool) =
+        let ni, nj = ri + di, rj + dj
 
+        if ni < 0 || ni >= map.Length || nj < 0 || nj >= map[0].Length then
+            cont false
+        elif map[ni][nj] = Cell.Wall then
+            cont false
+        elif map[ni][nj] = Cell.Empty then
+            map[ni][nj] <- Cell.Box
+            map[ri][rj] <- Cell.Empty
+            cont true
+        elif map[ni][nj] = Cell.Box then
+            moveBoxTail ni nj di dj (fun result ->
+                if result then
+                    map[ni][nj] <- Cell.Box
+                    map[ri][rj] <- Cell.Empty
+                    cont true
+                else
+                    cont false)
+        else
+            cont false
+
+    moveBoxTail ri rj di dj id
+
+let moveRobot (map: Cell[][]) (ri: int) (rj: int) (di: int) (dj: int) =
+    let ni, nj = ri + di, rj + dj
+
+    if ni < 0 || ni >= map.Length || nj < 0 || nj >= map[0].Length then
+        ri, rj
+    elif map[ni][nj] = Cell.Wall then
+        ri, rj
+    elif map[ni][nj] = Cell.Empty then
+        map[ni][nj] <- Cell.Robot
+        map[ri][rj] <- Cell.Empty
+        ni, nj
+    elif map[ni][nj] = Cell.Box then
+        if moveWithBox map ni nj di dj then
+            map[ni][nj] <- Cell.Robot
+            map[ri][rj] <- Cell.Empty
+            ni, nj
+        else
+            ri, rj
+    else
+        ri, rj
 
 let findRobot (map: Cell[][]) =
-    List.allPairs [ 0 .. (map.Length - 1) ] [ 0 .. (map[0].Length - 1) ]
-    |> List.find (fun (i, j) -> map[i][j] = Robot)
+    let mutable ri, rj = -1, -1
+
+    for i = 0 to map.Length - 1 do
+        for j = 0 to map[0].Length - 1 do
+            if map[i][j] = Cell.Robot then
+                ri <- i
+                rj <- j
+
+    ri, rj
+
+let part1 ((map: Cell[][], moves: Dir[])) =
+    let mutable ri, rj = findRobot map
+
+    for move in moves do
+        let di, dj =
+            match move with
+            | Up -> -1, 0
+            | Down -> 1, 0
+            | Left -> 0, -1
+            | Right -> 0, 1
+
+        let newRi, newRj = moveRobot map ri rj di dj
+        ri <- newRi
+        rj <- newRj
+
+    let mutable sum = 0
+
+    for i = 0 to map.Length - 1 do
+        for j = 0 to map[0].Length - 1 do
+            if map[i][j] = Cell.Box then
+                sum <- sum + (100 * i + j)
+
+    sum
 
 
-let pushLeft (i, j) (map: Cell[][]) =
-    let rec pushLeftTail (i, j) (map: Cell[][]) cont =
-        assert (map[i][j] = Box)
-        
-        match map[i][j - 1] with
-        | Wall -> None
-        | Empty ->
-            let newRow = map[i] |> swap (j - 1, j)
-            map |> Array.updateAt i newRow |> Some |> cont
-        | Box ->
-            pushLeftTail (i, j - 1) map (fun newMapOpt ->
-                match newMapOpt with
-                | None -> None
-                | Some newMap ->
-                    assert (newMap[i][j - 1] = Empty)
-                    pushLeftTail (i, j) newMap cont)
-        | c -> failwithf $"%A{c} !?"
-    
-    pushLeftTail (i, j) map id
-
-let moveLeft (map: Cell[][]) =
-    let rec moveLeftTail map cont =
-        let ri, rj = findRobot map
-        
-        match map[ri][rj - 1] with
-        | Wall -> map |> cont
-        | Empty ->
-            let newRow = map[ri] |> swap (rj - 1, rj)
-            map |> Array.updateAt ri newRow |> cont
-        | Box ->
-            match pushLeft (ri, rj - 1) map with
-            | None -> map |> cont
-            | Some newMap ->
-                assert (newMap[ri][rj - 1] = Empty)
-                moveLeftTail newMap cont
-        | Robot -> failwith "!?"
-    
-    moveLeftTail map id
-
-
-let moveRight (map: Cell[][]) = 
-    let reverse (a: 'T[][]) = Array.map Array.rev a
-    map |> reverse |> moveLeft |> reverse
-
-let moveUp (map: Cell[][]) =
-    map |> transpose |> moveLeft |> transpose
-
-
-let moveDown (map: Cell[][]) =
-    map |> transpose |> moveRight |> transpose
-
-
-let part1 ((map, moves) : Cell[][] * Dir seq) =
-    let map =
-        (map, moves)
-        ||> Seq.fold (fun map dir -> 
-            let mv =
-                match dir with
-                | Up -> moveUp
-                | Left -> moveLeft
-                | Down -> moveDown
-                | Right -> moveRight
-                
-            mv map)
-    
-    List.allPairs [ 0 .. (map.Length - 1) ] [ 0 .. (map[0].Length - 1) ]
-    |> List.sumBy (fun (i, j) -> if map[i][j] = Box then 100 * i + j else 0)
 
 
 let parseMap (input: string) =
@@ -106,20 +112,23 @@ let parseMap (input: string) =
     |> Array.map (fun row ->
         row.ToCharArray()
         |> Array.map (function
-            | '@' -> Robot
-            | 'O' -> Box
-            | '#' -> Wall
-            | '.' -> Empty
-            | c -> failwith $"Unexpected map char: {c}")
-    )
+            | '@' -> Cell.Robot
+            | 'O' -> Cell.Box
+            | '#' -> Cell.Wall
+            | '.' -> Cell.Empty
+            | c -> failwith $"Unexpected map char: {c}"))
 
 
 let parse (input: string) =
     let trimmed = input.Replace("\r", "")
-    let parts = trimmed.Split([| "\n\n" |], System.StringSplitOptions.RemoveEmptyEntries)
+
+    let parts =
+        trimmed.Split([| "\n\n" |], System.StringSplitOptions.RemoveEmptyEntries)
+
     match parts with
     | [| mapPart; movesPart |] ->
         let map = parseMap mapPart
+
         let moves =
             movesPart.Split('\n', System.StringSplitOptions.RemoveEmptyEntries)
             |> Array.collect (fun line ->
@@ -129,11 +138,10 @@ let parse (input: string) =
                     | '<' -> Left
                     | 'v' -> Down
                     | '>' -> Right
-                    | c -> failwith $"Unknown move: {c}")
-            )
+                    | c -> failwith $"Unknown move: {c}"))
+
         map, moves
-    | _ ->
-        failwith "Invalid input format. Expected two sections (map, moves) separated by a blank line."
+    | _ -> failwith "Invalid input format. Expected two sections (map, moves) separated by a blank line."
 
 
 [<EntryPoint>]
@@ -146,6 +154,6 @@ let main _ =
     (map, moves) |> part1 |> printfn "Part 1: %d"
 
     stopwatch.Stop()
-    printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds" 
+    printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
 
     0
