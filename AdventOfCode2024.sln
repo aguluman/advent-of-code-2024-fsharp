@@ -28,6 +28,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "day13", "day13\day13.fsproj
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "day14", "day14\day14.fsproj", "{309DA378-D7B5-4196-B628-593584B96EAC}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "day15", "day15\day15.fsproj", "{2D451576-12A8-44F1-9D9F-D22ABEEF3DF8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -206,6 +208,18 @@ Global
 		{309DA378-D7B5-4196-B628-593584B96EAC}.Release|x64.Build.0 = Release|Any CPU
 		{309DA378-D7B5-4196-B628-593584B96EAC}.Release|x86.ActiveCfg = Release|Any CPU
 		{309DA378-D7B5-4196-B628-593584B96EAC}.Release|x86.Build.0 = Release|Any CPU
+		{2D451576-12A8-44F1-9D9F-D22ABEEF3DF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D451576-12A8-44F1-9D9F-D22ABEEF3DF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D451576-12A8-44F1-9D9F-D22ABEEF3DF8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2D451576-12A8-44F1-9D9F-D22ABEEF3DF8}.Debug|x64.Build.0 = Debug|Any CPU
+		{2D451576-12A8-44F1-9D9F-D22ABEEF3DF8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2D451576-12A8-44F1-9D9F-D22ABEEF3DF8}.Debug|x86.Build.0 = Debug|Any CPU
+		{2D451576-12A8-44F1-9D9F-D22ABEEF3DF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D451576-12A8-44F1-9D9F-D22ABEEF3DF8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D451576-12A8-44F1-9D9F-D22ABEEF3DF8}.Release|x64.ActiveCfg = Release|Any CPU
+		{2D451576-12A8-44F1-9D9F-D22ABEEF3DF8}.Release|x64.Build.0 = Release|Any CPU
+		{2D451576-12A8-44F1-9D9F-D22ABEEF3DF8}.Release|x86.ActiveCfg = Release|Any CPU
+		{2D451576-12A8-44F1-9D9F-D22ABEEF3DF8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
