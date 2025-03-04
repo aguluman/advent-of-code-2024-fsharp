@@ -9,7 +9,7 @@ open System.Diagnostics
 /// Represents a robot with its position and velocity in a 2D grid
 /// </summary>
 type Robot = {
-    /// Position as (x,y) coordinates where (0,0) is top-left corner
+    /// Position as (x,y) coordinates where (0,0) is in the top-left corner
     Position: int * int
     /// Velocity as (dx,dy) where positive dx is right and positive dy is down
     Velocity: int * int
@@ -19,10 +19,10 @@ type Robot = {
 /// Represents the four quadrants of the bathroom grid
 /// </summary>
 type BathroomQuadrant =
-    | TopRight    // x > width/2  && y < height/2
-    | TopLeft     // x < width/2  && y < height/2
-    | BottomLeft  // x < width/2  && y > height/2
-    | BottomRight // x > width/2  && y > height/2
+    | TopRight    // x > width/2 && y < height/2
+    | TopLeft     // x < width/2 && y < height/2
+    | BottomLeft  // x < width/2 && y > height/2
+    | BottomRight // x > width/2 && y > height/2
 
 
 
@@ -66,7 +66,7 @@ let part1 ((securityRobots, gridWidth, gridHeight): Robot seq * int * int) =
         securityRobots 
         |> Seq.map (simulateRobotMovement 100 gridWidth gridHeight)
         |> Seq.choose (fun { Position = (posX, posY)} -> 
-            // Determine which quadrant the robot is in, excluding border lines
+            // Determine which quadrant the robot is in, excluding the borderlines
             match posX, posY with
             | x, y when x > gridWidth/2  && y < gridHeight/2 -> Some TopRight
             | x, y when x < gridWidth/2  && y < gridHeight/2 -> Some TopLeft
@@ -74,7 +74,7 @@ let part1 ((securityRobots, gridWidth, gridHeight): Robot seq * int * int) =
             | x, y when x > gridWidth/2  && y > gridHeight/2 -> Some BottomRight
             | _ -> None) // Robots on dividing lines don't count
 
-    // Calculate safety factor by multiplying counts
+    // Calculate the safety factor by multiplying counts
     (1, Seq.countBy id quadrantCounts)
     ||> Seq.fold (fun acc (_, count) -> acc * count)
 
@@ -105,17 +105,17 @@ let part2 ((robots: Robot list, w: int, h: int)) =
                     row >= 0 && row < h 
                     && col >= 0 && col < w 
                 then 
-                    map.[row, col] <- '@')
+                    map[row, col] <- '@')
 
             // Display current state
             let sb = StringBuilder()
             for i = 0 to h-1 do
                 for j = 0 to w-1 do
-                    sb.Append(map.[i,j]) |> ignore
+                    sb.Append(map[i,j]) |> ignore
                 sb.AppendLine() |> ignore
-            printfn "Time = %d\n%s" elapsed (sb.ToString())
+            printfn $"Time = %d{elapsed}\n%s{sb.ToString()}"
 
-            // Simulate next step
+            // Simulate the next step
             search (elapsed + 1) (robots |> List.map (simulateRobotMovement 1 w h))
 
     // Start visualization
@@ -173,10 +173,10 @@ let parse (input: string) =
                 | true, num -> num
                 | false, _ -> failwithf $"Invalid {label} coordinate: %s{value}"
                 
-            // Create Robot record
+            // Create the Robot record
             {
-                Position = parseCoordinate pos.[0] "position X", parseCoordinate pos.[1] "position Y"
-                Velocity = parseCoordinate vel.[0] "velocity X", parseCoordinate vel.[1] "velocity Y"
+                Position = parseCoordinate pos[0] "position X", parseCoordinate pos[1] "position Y"
+                Velocity = parseCoordinate vel[0] "velocity X", parseCoordinate vel[1] "velocity Y"
             }
         with e ->
             printfn $"\n\nError parsing line:\n%s{line}"
