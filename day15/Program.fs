@@ -4,6 +4,7 @@ open NUnit.Framework
 open FsUnit
 open System.Text
 open System.Diagnostics
+
 type Cell =
     | Robot
     | Box
@@ -11,10 +12,10 @@ type Cell =
     | Empty
 
 type Dir =
-    | U
-    | L
-    | D
-    | R
+    | Up
+    | Left
+    | Down
+    | Right
 
 let swap (i, j) (a: 'T[]) =
     let x, y = a[i], a[j]
@@ -80,10 +81,10 @@ let part1 ((map, moves): Cell[][] * Dir seq) =
         ||> Seq.fold (fun map dir ->
             let mv =
                 match dir with
-                | U -> moveUp
-                | L -> moveLeft
-                | D -> moveDown
-                | R -> moveRight
+                | Up -> moveUp
+                | Left -> moveLeft
+                | Down -> moveDown
+                | Right -> moveRight
 
             mv map)
 
@@ -259,10 +260,10 @@ module Part2 =
             ||> Seq.fold (fun map dir ->
                 let mv =
                     match dir with
-                    | U -> moveUp
-                    | L -> moveLeft
-                    | D -> moveDown
-                    | R -> moveRight
+                    | Up -> moveUp
+                    | Left -> moveLeft
+                    | Down -> moveDown
+                    | Right -> moveRight
 
                 mv map)
 
@@ -283,8 +284,10 @@ let parseMap (input: string) =
 
 let parse (input: string) =
     let trimmed = input.Replace("\r", "")
-    let input = trimmed.Split([| "\n\n" |], System.StringSplitOptions.RemoveEmptyEntries)
-    
+
+    let input =
+        trimmed.Split([| "\n\n" |], System.StringSplitOptions.RemoveEmptyEntries)
+
     let map, moves = input[0], input[1]
 
     let map = parseMap map
@@ -294,12 +297,12 @@ let parse (input: string) =
         |> Array.collect (fun moves ->
             moves.ToCharArray()
             |> Array.map (function
-                | '^' -> U
-                | '<' -> L
-                | 'v' -> D
-                | '>' -> R
+                | '^' -> Up
+                | '<' -> Left
+                | 'v' -> Down
+                | '>' -> Right
                 | c -> failwith $"{c} !?"))
-        
+
     (map, moves)
 
 
