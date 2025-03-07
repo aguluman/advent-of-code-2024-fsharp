@@ -11,7 +11,7 @@ type Cell =
     | Wall
     | Empty
 
-type Dir =
+type Direction =
     | Up
     | Left
     | Down
@@ -75,12 +75,12 @@ let moveUp (map: Cell[][]) =
 let moveDown (map: Cell[][]) =
     map |> transpose |> moveRight |> transpose
 
-let part1 ((map, moves): Cell[][] * Dir seq) =
+let part1 ((map, moves): Cell[][] * Direction seq) =
     let map =
         (map, moves)
-        ||> Seq.fold (fun map dir ->
+        ||> Seq.fold (fun map direction ->
             let mv =
-                match dir with
+                match direction with
                 | Up -> moveUp
                 | Left -> moveLeft
                 | Down -> moveDown
@@ -92,96 +92,96 @@ let part1 ((map, moves): Cell[][] * Dir seq) =
     |> List.sumBy (fun (i, j) -> if map[i][j] = Box then 100 * i + j else 0)
 
 module Part2 =
-    type Cell2 =
-        | Robot
+    type ScaledCell =
+        | ScaledRobot
         | BoxL
         | BoxR
-        | Wall
-        | Empty
+        | ScaledWall
+        | ScaledEmpty
 
     let downgrade =
         function
-        | Robot -> Cell.Robot
+        | ScaledRobot -> Robot
         | BoxL
         | BoxR -> Box
-        | Wall -> Cell.Wall
-        | Empty -> Cell.Empty
+        | ScaledWall -> Wall
+        | ScaledEmpty -> Empty
 
 
-    let toString (map: Cell2[][]) =
+    let toString (map: ScaledCell[][]) =
         map
         |> Array.map (fun row ->
             row
             |> Array.map (function
-                | Robot -> '@'
+                | ScaledRobot -> '@'
                 | BoxL -> '['
                 | BoxR -> ']'
-                | Wall -> '#'
-                | Empty -> '.')
+                | ScaledWall -> '#'
+                | ScaledEmpty -> '.')
             |> System.String)
         |> String.concat "\n"
 
-    let findRobot (map: Cell2[][]) =
+    let findRobot (map: ScaledCell[][]) =
         map |> Array.map (fun row -> row |> Array.map downgrade) |> findRobot
 
-    let rec pushLeft (i, j) (map: Cell2[][]) =
+    let rec pushLeft (i, j) (map: ScaledCell[][]) =
         assert (map[i][j] = BoxR)
         assert (map[i][j - 1] = BoxL)
 
         match map[i][j - 2] with
-        | Wall -> None
-        | Empty ->
+        | ScaledWall -> None
+        | ScaledEmpty ->
             // #..[].. -> #.[]...
             let newRow = map[i] |> swap (j - 2, j - 1) |> swap (j - 1, j)
             map |> Array.updateAt i newRow |> Some
         | BoxR ->
             pushLeft (i, j - 2) map
             |> Option.map (fun map ->
-                assert (map[i][j - 2] = Empty)
+                assert (map[i][j - 2] = ScaledEmpty)
                 // delegate
                 pushLeft (i, j) map |> Option.get)
         | c -> failwithf $"%A{c} !?"
 
-    let rec pushUp (i, j) (map: Cell2[][]) =
+    let rec pushUp (i, j) (map: ScaledCell[][]) =
         match map[i][j] with
         | BoxL ->
             assert (map[i][j + 1] = BoxR)
 
             match map[i - 1][j], map[i - 1][j + 1] with
-            | Wall, _
-            | _, Wall -> None
-            | Empty, Empty ->
+            | ScaledWall, _
+            | _, ScaledWall -> None
+            | ScaledEmpty, ScaledEmpty ->
                 let newRow1 = map[i - 1] |> Array.updateAt j BoxL |> Array.updateAt (j + 1) BoxR
-                let newRow2 = map[i] |> Array.updateAt j Empty |> Array.updateAt (j + 1) Empty
+                let newRow2 = map[i] |> Array.updateAt j ScaledEmpty |> Array.updateAt (j + 1) ScaledEmpty
                 map |> Array.updateAt (i - 1) newRow1 |> Array.updateAt i newRow2 |> Some
             // []
             | BoxL, BoxR
             // ].
-            | BoxR, Empty ->
+            | BoxR, ScaledEmpty ->
                 pushUp (i - 1, j) map
                 |> Option.map (fun map ->
-                    assert (map[i - 1][j] = Empty)
-                    assert (map[i - 1][j + 1] = Empty)
+                    assert (map[i - 1][j] = ScaledEmpty)
+                    assert (map[i - 1][j + 1] = ScaledEmpty)
                     // delegate
                     pushUp (i, j) map |> Option.get)
             // .[
-            | Empty, BoxL ->
+            | ScaledEmpty, BoxL ->
                 pushUp (i - 1, j + 1) map
                 |> Option.map (fun map ->
-                    assert (map[i - 1][j] = Empty)
-                    assert (map[i - 1][j + 1] = Empty)
+                    assert (map[i - 1][j] = ScaledEmpty)
+                    assert (map[i - 1][j + 1] = ScaledEmpty)
                     // delegate
                     pushUp (i, j) map |> Option.get)
             // ][
             | BoxR, BoxL ->
                 pushUp (i - 1, j) map
                 |> Option.bind (fun map ->
-                    assert (map[i - 1][j - 1] = Empty)
-                    assert (map[i - 1][j] = Empty)
+                    assert (map[i - 1][j - 1] = ScaledEmpty)
+                    assert (map[i - 1][j] = ScaledEmpty)
                     pushUp (i - 1, j + 1) map)
                 |> Option.map (fun map ->
-                    assert (map[i - 1][j] = Empty)
-                    assert (map[i - 1][j + 1] = Empty)
+                    assert (map[i - 1][j] = ScaledEmpty)
+                    assert (map[i - 1][j + 1] = ScaledEmpty)
                     // delegate
                     pushUp (i, j) map |> Option.get)
             | c1, c2 -> failwithf $"%A{c1} %A{c2} !?"
@@ -190,12 +190,12 @@ module Part2 =
             pushUp (i, j - 1) map
         | c -> failwithf $"%A{c} !?"
 
-    let rec moveLeft (map: Cell2[][]) =
+    let rec moveLeft (map: ScaledCell[][]) =
         let ri, rj = findRobot map
 
         match map[ri][rj - 1] with
-        | Wall -> map
-        | Empty ->
+        | ScaledWall -> map
+        | ScaledEmpty ->
             // #...@. -> #..@..
             let newRow = map[ri] |> swap (rj - 1, rj)
             map |> Array.updateAt ri newRow
@@ -203,34 +203,34 @@ module Part2 =
             map
             |> pushLeft (ri, rj - 1)
             |> Option.map (fun map ->
-                assert (map[ri][rj - 1] = Empty)
+                assert (map[ri][rj - 1] = ScaledEmpty)
                 // delegate
                 moveLeft map)
             |> Option.defaultWith (fun () -> map)
         | c -> failwithf $"%A{c} !?"
 
-    let rec moveUp (map: Cell2[][]) =
+    let rec moveUp (map: ScaledCell[][]) =
         let ri, rj = findRobot map
 
         match map[ri - 1][rj] with
-        | Wall -> map
-        | Empty ->
-            let newRow1 = map[ri - 1] |> Array.updateAt rj Robot
-            let newRow2 = map[ri] |> Array.updateAt rj Empty
+        | ScaledWall -> map
+        | ScaledEmpty ->
+            let newRow1 = map[ri - 1] |> Array.updateAt rj ScaledRobot
+            let newRow2 = map[ri] |> Array.updateAt rj ScaledEmpty
             map |> Array.updateAt (ri - 1) newRow1 |> Array.updateAt ri newRow2
         | BoxL
         | BoxR ->
             map
             |> pushUp (ri - 1, rj)
             |> Option.map (fun map ->
-                assert (map[ri - 1][rj] = Empty)
+                assert (map[ri - 1][rj] = ScaledEmpty)
                 // delegate
                 moveUp map)
             |> Option.defaultWith (fun () -> map)
         | c -> failwithf $"%A{c} !?"
 
-    let moveRight (map: Cell2[][]) =
-        let reverse (map: Cell2[][]) =
+    let moveRight (map: ScaledCell[][]) =
+        let reverse (map: ScaledCell[][]) =
             map
             |> Array.map (fun row ->
                 row
@@ -242,19 +242,19 @@ module Part2 =
 
         map |> reverse |> moveLeft |> reverse
 
-    let moveDown (map: Cell2[][]) = map |> Array.rev |> moveUp |> Array.rev
+    let moveDown (map: ScaledCell[][]) = map |> Array.rev |> moveUp |> Array.rev
 
     let scaleUp (map: Cell[][]) =
         map
         |> Array.map (fun row ->
             row
             |> Array.collect (function
-                | Cell.Robot -> [| Robot; Empty |]
+                | Cell.Robot -> [| ScaledRobot; ScaledEmpty |]
                 | Box -> [| BoxL; BoxR |]
-                | Cell.Wall -> [| Wall; Wall |]
-                | Cell.Empty -> [| Empty; Empty |]))
+                | Cell.Wall -> [| ScaledWall; ScaledWall |]
+                | Cell.Empty -> [| ScaledEmpty; ScaledEmpty |]))
 
-    let part2 ((map, moves): Cell[][] * Dir seq) =
+    let part2 ((map, moves): Cell[][] * Direction seq) =
         let map =
             (scaleUp map, moves)
             ||> Seq.fold (fun map dir ->
@@ -303,7 +303,7 @@ let parse (input: string) =
                 | '>' -> Right
                 | c -> failwith $"{c} !?"))
 
-    (map, moves)
+    map, moves
 
 
 [<EntryPoint>]
