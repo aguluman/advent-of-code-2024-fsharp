@@ -91,184 +91,184 @@ let part1 ((map, moves): Cell[][] * Direction seq) =
     List.allPairs [ 0 .. (map.Length - 1) ] [ 0 .. (map[0].Length - 1) ]
     |> List.sumBy (fun (i, j) -> if map[i][j] = Box then 100 * i + j else 0)
 
-module Part2 =
-    type ScaledCell =
-        | ScaledRobot
-        | BoxL
-        | BoxR
-        | ScaledWall
-        | ScaledEmpty
 
-    let downgrade =
-        function
-        | ScaledRobot -> Robot
-        | BoxL
-        | BoxR -> Box
-        | ScaledWall -> Wall
-        | ScaledEmpty -> Empty
+type ScaledCell =
+    | ScaledRobot
+    | BoxL
+    | BoxR
+    | ScaledWall
+    | ScaledEmpty
+
+let downgrade =
+    function
+    | ScaledRobot -> Robot
+    | BoxL
+    | BoxR -> Box
+    | ScaledWall -> Wall
+    | ScaledEmpty -> Empty
 
 
-    let toString (map: ScaledCell[][]) =
-        map
-        |> Array.map (fun row ->
-            row
-            |> Array.map (function
-                | ScaledRobot -> '@'
-                | BoxL -> '['
-                | BoxR -> ']'
-                | ScaledWall -> '#'
-                | ScaledEmpty -> '.')
-            |> System.String)
-        |> String.concat "\n"
+let toString (map: ScaledCell[][]) =
+    map
+    |> Array.map (fun row ->
+        row
+        |> Array.map (function
+            | ScaledRobot -> '@'
+            | BoxL -> '['
+            | BoxR -> ']'
+            | ScaledWall -> '#'
+            | ScaledEmpty -> '.')
+        |> System.String)
+    |> String.concat "\n"
 
-    let findRobot (map: ScaledCell[][]) =
-        map |> Array.map (fun row -> row |> Array.map downgrade) |> findRobot
+let findRobotScaled (map: ScaledCell[][]) =
+    map |> Array.map (fun row -> row |> Array.map downgrade) |> findRobot
 
-    let rec pushLeft (i, j) (map: ScaledCell[][]) =
-        assert (map[i][j] = BoxR)
-        assert (map[i][j - 1] = BoxL)
+let rec pushLeftScaled (i, j) (map: ScaledCell[][]) =
+    assert (map[i][j] = BoxR)
+    assert (map[i][j - 1] = BoxL)
 
-        match map[i][j - 2] with
-        | ScaledWall -> None
-        | ScaledEmpty ->
-            // #..[].. -> #.[]...
-            let newRow = map[i] |> swap (j - 2, j - 1) |> swap (j - 1, j)
-            map |> Array.updateAt i newRow |> Some
-        | BoxR ->
-            pushLeft (i, j - 2) map
-            |> Option.map (fun map ->
-                assert (map[i][j - 2] = ScaledEmpty)
-                // delegate
-                pushLeft (i, j) map |> Option.get)
-        | c -> failwithf $"%A{c} !?"
-
-    let rec pushUp (i, j) (map: ScaledCell[][]) =
-        match map[i][j] with
-        | BoxL ->
-            assert (map[i][j + 1] = BoxR)
-
-            match map[i - 1][j], map[i - 1][j + 1] with
-            | ScaledWall, _
-            | _, ScaledWall -> None
-            | ScaledEmpty, ScaledEmpty ->
-                let newRow1 = map[i - 1] |> Array.updateAt j BoxL |> Array.updateAt (j + 1) BoxR
-                let newRow2 = map[i] |> Array.updateAt j ScaledEmpty |> Array.updateAt (j + 1) ScaledEmpty
-                map |> Array.updateAt (i - 1) newRow1 |> Array.updateAt i newRow2 |> Some
-            // []
-            | BoxL, BoxR
-            // ].
-            | BoxR, ScaledEmpty ->
-                pushUp (i - 1, j) map
-                |> Option.map (fun map ->
-                    assert (map[i - 1][j] = ScaledEmpty)
-                    assert (map[i - 1][j + 1] = ScaledEmpty)
-                    // delegate
-                    pushUp (i, j) map |> Option.get)
-            // .[
-            | ScaledEmpty, BoxL ->
-                pushUp (i - 1, j + 1) map
-                |> Option.map (fun map ->
-                    assert (map[i - 1][j] = ScaledEmpty)
-                    assert (map[i - 1][j + 1] = ScaledEmpty)
-                    // delegate
-                    pushUp (i, j) map |> Option.get)
-            // ][
-            | BoxR, BoxL ->
-                pushUp (i - 1, j) map
-                |> Option.bind (fun map ->
-                    assert (map[i - 1][j - 1] = ScaledEmpty)
-                    assert (map[i - 1][j] = ScaledEmpty)
-                    pushUp (i - 1, j + 1) map)
-                |> Option.map (fun map ->
-                    assert (map[i - 1][j] = ScaledEmpty)
-                    assert (map[i - 1][j + 1] = ScaledEmpty)
-                    // delegate
-                    pushUp (i, j) map |> Option.get)
-            | c1, c2 -> failwithf $"%A{c1} %A{c2} !?"
-        | BoxR ->
+    match map[i][j - 2] with
+    | ScaledWall -> None
+    | ScaledEmpty ->
+        // #..[].. -> #.[]...
+        let newRow = map[i] |> swap (j - 2, j - 1) |> swap (j - 1, j)
+        map |> Array.updateAt i newRow |> Some
+    | BoxR ->
+        pushLeftScaled (i, j - 2) map
+        |> Option.map (fun map ->
+            assert (map[i][j - 2] = ScaledEmpty)
             // delegate
-            pushUp (i, j - 1) map
-        | c -> failwithf $"%A{c} !?"
+            pushLeftScaled (i, j) map |> Option.get)
+    | c -> failwithf $"%A{c} !?"
 
-    let rec moveLeft (map: ScaledCell[][]) =
-        let ri, rj = findRobot map
+let rec pushUpScaled (i, j) (map: ScaledCell[][]) =
+    match map[i][j] with
+    | BoxL ->
+        assert (map[i][j + 1] = BoxR)
 
-        match map[ri][rj - 1] with
-        | ScaledWall -> map
-        | ScaledEmpty ->
-            // #...@. -> #..@..
-            let newRow = map[ri] |> swap (rj - 1, rj)
-            map |> Array.updateAt ri newRow
-        | BoxR ->
-            map
-            |> pushLeft (ri, rj - 1)
+        match map[i - 1][j], map[i - 1][j + 1] with
+        | ScaledWall, _
+        | _, ScaledWall -> None
+        | ScaledEmpty, ScaledEmpty ->
+            let newRow1 = map[i - 1] |> Array.updateAt j BoxL |> Array.updateAt (j + 1) BoxR
+            let newRow2 = map[i] |> Array.updateAt j ScaledEmpty |> Array.updateAt (j + 1) ScaledEmpty
+            map |> Array.updateAt (i - 1) newRow1 |> Array.updateAt i newRow2 |> Some
+        // []
+        | BoxL, BoxR
+        // ].
+        | BoxR, ScaledEmpty ->
+            pushUpScaled (i - 1, j) map
             |> Option.map (fun map ->
-                assert (map[ri][rj - 1] = ScaledEmpty)
+                assert (map[i - 1][j] = ScaledEmpty)
+                assert (map[i - 1][j + 1] = ScaledEmpty)
                 // delegate
-                moveLeft map)
-            |> Option.defaultWith (fun () -> map)
-        | c -> failwithf $"%A{c} !?"
-
-    let rec moveUp (map: ScaledCell[][]) =
-        let ri, rj = findRobot map
-
-        match map[ri - 1][rj] with
-        | ScaledWall -> map
-        | ScaledEmpty ->
-            let newRow1 = map[ri - 1] |> Array.updateAt rj ScaledRobot
-            let newRow2 = map[ri] |> Array.updateAt rj ScaledEmpty
-            map |> Array.updateAt (ri - 1) newRow1 |> Array.updateAt ri newRow2
-        | BoxL
-        | BoxR ->
-            map
-            |> pushUp (ri - 1, rj)
+                pushUpScaled (i, j) map |> Option.get)
+        // .[
+        | ScaledEmpty, BoxL ->
+            pushUpScaled (i - 1, j + 1) map
             |> Option.map (fun map ->
-                assert (map[ri - 1][rj] = ScaledEmpty)
+                assert (map[i - 1][j] = ScaledEmpty)
+                assert (map[i - 1][j + 1] = ScaledEmpty)
                 // delegate
-                moveUp map)
-            |> Option.defaultWith (fun () -> map)
-        | c -> failwithf $"%A{c} !?"
+                pushUpScaled (i, j) map |> Option.get)
+        // ][
+        | BoxR, BoxL ->
+            pushUpScaled (i - 1, j) map
+            |> Option.bind (fun map ->
+                assert (map[i - 1][j - 1] = ScaledEmpty)
+                assert (map[i - 1][j] = ScaledEmpty)
+                pushUpScaled (i - 1, j + 1) map)
+            |> Option.map (fun map ->
+                assert (map[i - 1][j] = ScaledEmpty)
+                assert (map[i - 1][j + 1] = ScaledEmpty)
+                // delegate
+                pushUpScaled (i, j) map |> Option.get)
+        | c1, c2 -> failwithf $"%A{c1} %A{c2} !?"
+    | BoxR ->
+        // delegate
+        pushUpScaled (i, j - 1) map
+    | c -> failwithf $"%A{c} !?"
 
-    let moveRight (map: ScaledCell[][]) =
-        let reverse (map: ScaledCell[][]) =
-            map
-            |> Array.map (fun row ->
-                row
-                |> Array.rev
-                |> Array.map (function
-                    | BoxL -> BoxR
-                    | BoxR -> BoxL
-                    | c -> c))
+let rec moveLeftScaled (map: ScaledCell[][]) =
+    let ri, rj = findRobotScaled map
 
-        map |> reverse |> moveLeft |> reverse
+    match map[ri][rj - 1] with
+    | ScaledWall -> map
+    | ScaledEmpty ->
+        // #...@. -> #..@..
+        let newRow = map[ri] |> swap (rj - 1, rj)
+        map |> Array.updateAt ri newRow
+    | BoxR ->
+        map
+        |> pushLeftScaled (ri, rj - 1)
+        |> Option.map (fun map ->
+            assert (map[ri][rj - 1] = ScaledEmpty)
+            // delegate
+            moveLeftScaled map)
+        |> Option.defaultWith (fun () -> map)
+    | c -> failwithf $"%A{c} !?"
 
-    let moveDown (map: ScaledCell[][]) = map |> Array.rev |> moveUp |> Array.rev
+let rec moveUpScaled (map: ScaledCell[][]) =
+    let ri, rj = findRobotScaled map
 
-    let scaleUp (map: Cell[][]) =
+    match map[ri - 1][rj] with
+    | ScaledWall -> map
+    | ScaledEmpty ->
+        let newRow1 = map[ri - 1] |> Array.updateAt rj ScaledRobot
+        let newRow2 = map[ri] |> Array.updateAt rj ScaledEmpty
+        map |> Array.updateAt (ri - 1) newRow1 |> Array.updateAt ri newRow2
+    | BoxL
+    | BoxR ->
+        map
+        |> pushUpScaled (ri - 1, rj)
+        |> Option.map (fun map ->
+            assert (map[ri - 1][rj] = ScaledEmpty)
+            // delegate
+            moveUpScaled map)
+        |> Option.defaultWith (fun () -> map)
+    | c -> failwithf $"%A{c} !?"
+
+let moveRightScaled (map: ScaledCell[][]) =
+    let reverse (map: ScaledCell[][]) =
         map
         |> Array.map (fun row ->
             row
-            |> Array.collect (function
-                | Cell.Robot -> [| ScaledRobot; ScaledEmpty |]
-                | Box -> [| BoxL; BoxR |]
-                | Cell.Wall -> [| ScaledWall; ScaledWall |]
-                | Cell.Empty -> [| ScaledEmpty; ScaledEmpty |]))
+            |> Array.rev
+            |> Array.map (function
+                | BoxL -> BoxR
+                | BoxR -> BoxL
+                | c -> c))
 
-    let part2 ((map, moves): Cell[][] * Direction seq) =
-        let map =
-            (scaleUp map, moves)
-            ||> Seq.fold (fun map dir ->
-                let mv =
-                    match dir with
-                    | Up -> moveUp
-                    | Left -> moveLeft
-                    | Down -> moveDown
-                    | Right -> moveRight
+    map |> reverse |> moveLeftScaled |> reverse
 
-                mv map)
+let moveDownScaled (map: ScaledCell[][]) = map |> Array.rev |> moveUpScaled |> Array.rev
 
-        List.allPairs [ 0 .. (map.Length - 1) ] [ 0 .. (map[0].Length - 1) ]
-        |> List.sumBy (fun (i, j) -> if map[i][j] = BoxL then i * 100 + j else 0)
+let scaleUp (map: Cell[][]) =
+    map
+    |> Array.map (fun row ->
+        row
+        |> Array.collect (function
+            | Cell.Robot -> [| ScaledRobot; ScaledEmpty |]
+            | Box -> [| BoxL; BoxR |]
+            | Cell.Wall -> [| ScaledWall; ScaledWall |]
+            | Cell.Empty -> [| ScaledEmpty; ScaledEmpty |]))
+
+let part2 ((map, moves): Cell[][] * Direction seq) =
+    let map =
+        (scaleUp map, moves)
+        ||> Seq.fold (fun map dir ->
+            let mv =
+                match dir with
+                | Up -> moveUpScaled
+                | Left -> moveLeftScaled
+                | Down -> moveDownScaled
+                | Right -> moveRightScaled
+
+            mv map)
+
+    List.allPairs [ 0 .. (map.Length - 1) ] [ 0 .. (map[0].Length - 1) ]
+    |> List.sumBy (fun (i, j) -> if map[i][j] = BoxL then i * 100 + j else 0)
 
 
 let parseMap (input: string) =
@@ -314,7 +314,7 @@ let main _ =
     let stopwatch = Stopwatch.StartNew()
 
     (map, moves) |> part1 |> printfn "Part 1: %d"
-    (map, moves) |> Part2.part2 |> printfn "Part 2: %d"
+    (map, moves) |> part2 |> printfn "Part 2: %d"
 
     stopwatch.Stop()
     printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
