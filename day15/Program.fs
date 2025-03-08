@@ -1,8 +1,5 @@
 ﻿module day15
 
-open NUnit.Framework
-open FsUnit
-open System.Text
 open System.Diagnostics
 
 type Cell =
@@ -108,21 +105,10 @@ let downgrade =
     | ScaledEmpty -> Empty
 
 
-let toString (map: ScaledCell[][]) =
-    map
-    |> Array.map (fun row ->
-        row
-        |> Array.map (function
-            | ScaledRobot -> '@'
-            | BoxL -> '['
-            | BoxR -> ']'
-            | ScaledWall -> '#'
-            | ScaledEmpty -> '.')
-        |> System.String)
-    |> String.concat "\n"
 
 let findRobotScaled (map: ScaledCell[][]) =
     map |> Array.map (fun row -> row |> Array.map downgrade) |> findRobot
+
 
 let rec pushLeftScaled (i, j) (map: ScaledCell[][]) =
     assert (map[i][j] = BoxR)
