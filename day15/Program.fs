@@ -237,10 +237,10 @@ let scaleUp (map: Cell[][]) =
     |> Array.map (fun row ->
         row
         |> Array.collect (function
-            | Cell.Robot -> [| ScaledRobot; ScaledEmpty |]
+            | Robot -> [| ScaledRobot; ScaledEmpty |]
             | Box -> [| BoxL; BoxR |]
-            | Cell.Wall -> [| ScaledWall; ScaledWall |]
-            | Cell.Empty -> [| ScaledEmpty; ScaledEmpty |]))
+            | Wall -> [| ScaledWall; ScaledWall |]
+            | Empty -> [| ScaledEmpty; ScaledEmpty |]))
 
 let part2 ((map, moves): Cell[][] * Direction seq) =
     let map =
