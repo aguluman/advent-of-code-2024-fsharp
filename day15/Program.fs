@@ -1,6 +1,8 @@
 ﻿module day15
 
 open System.Diagnostics
+open NUnit.Framework
+open FsUnit
 
 type Cell =
     | Robot
@@ -290,6 +292,163 @@ let parse (input: string) =
                 | c -> failwith $"{c} !?"))
 
     map, moves
+
+
+module Day15TestsSuites =
+    // Test input data
+    let exampleInput = "########
+#..O.O.#
+##@.O..#
+#...O..#
+#.#.O..#
+#...O..#
+#......#
+########
+
+<^^>>>vv<v>>v<<"
+
+    let exampleInputLarge = "##########
+#..O..O.O#
+#......O.#
+#.OO..O.O#
+#..O@..O.#
+#O#..O...#
+#O..O..O.#
+#.OO.O.OO#
+#....O...#
+##########
+
+<vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
+vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
+><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
+<<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
+^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
+^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
+>^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
+<><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
+^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
+v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^"
+
+    // Helper function for cell array printing
+    let cellArrayPrinter (map: Cell[][]) =
+        map 
+        |> Array.map (fun row ->
+            row 
+            |> Array.map (function
+                | Robot -> "@"
+                | Box -> "O"
+                | Wall -> "#"
+                | Empty -> ".")
+            |> String.concat "")
+        |> String.concat "\n"
+
+    let scaledCellArrayPrinter (map: ScaledCell[][]) =
+        map 
+        |> Array.map (fun row ->
+            row 
+            |> Array.map (function
+                | ScaledRobot -> "@"
+                | BoxL -> "["
+                | BoxR -> "]"
+                | ScaledWall -> "#"
+                | ScaledEmpty -> ".")
+            |> String.concat "")
+        |> String.concat "\n"
+
+    [<TestFixture>]
+    type Day15Tests() =
+        
+        [<Test>]
+        member _.``Basic movement - move left``() =
+            let input = "#..OO@."
+            let expected = "#.OO@.."
+            let map = parseMap input
+            let moved = moveLeft map
+            moved |> cellArrayPrinter |> should equal (parseMap expected |> cellArrayPrinter)
+
+        [<Test>]
+        member _.``Basic movement - move right``() =
+            let input = "#.@OO.."
+            let expected = "#..@OO."
+            let map = parseMap input
+            let moved = moveRight map
+            moved |> cellArrayPrinter |> should equal (parseMap expected |> cellArrayPrinter)
+
+        [<Test>]
+        member _.``Basic movement - move up``() =
+            let input = "######\n#....#\n#.OO@#\n######"
+            let expected = "######\n#...@#\n#.OO.#\n######"
+            let map = parseMap input
+            let moved = moveUp map
+            moved |> cellArrayPrinter |> should equal (parseMap expected |> cellArrayPrinter)
+
+        [<Test>]
+        member _.``Basic movement - move down``() =
+            let input = "######\n#.@OO#\n#....#\n######"
+            let expected = "######\n#..OO#\n#.@..#\n######"
+            let map = parseMap input
+            let moved = moveDown map
+            moved |> cellArrayPrinter |> should equal (parseMap expected |> cellArrayPrinter)
+
+        // Scaled movement tests
+        [<Test>]
+        member _.``Scaled movement - move left``() =
+            let input = "#..OO@."
+            let expected = "##...[][]@...."
+            let map = parseMap input |> scaleUp
+            let moved = moveLeftScaled map
+            moved |> scaledCellArrayPrinter |> should equal expected
+
+        [<Test>]
+        member _.``Scaled movement - move right``() =
+            let input = "#.@OO.."
+            let expected = "##...@[][]...."
+            let map = parseMap input |> scaleUp
+            let moved = moveRightScaled map
+            moved |> scaledCellArrayPrinter |> should equal expected
+
+        [<Test>]
+        member _.``Scaled movement - move left v2``() =
+            let input = "######\n#....#\n#.OO@#\n######"
+            let expected = "############\n##........##\n##.[][]@..##\n############"
+            let map = parseMap input |> scaleUp
+            let moved = moveLeftScaled map
+            moved |> scaledCellArrayPrinter |> should equal expected
+
+        [<Test>]
+        member _.``Scaled movement - move right v2``() =
+            let input = "#######\n#.....#\n#.OO@.#\n#######"
+            let expected = "##############\n##..........##\n##..[][].@..##\n##############"
+            let map = parseMap input |> scaleUp
+            let moved = moveRightScaled map
+            moved |> scaledCellArrayPrinter |> should equal expected
+
+        [<Test>]
+        member _.``Scaled movement - move up``() =
+            let input = "######\n#....#\n#.OO@#\n######"
+            let expected = "######\n#...@#\n#.OO.#\n######"
+            let map = parseMap input |> scaleUp
+            let moved = moveUpScaled map
+            moved |> scaledCellArrayPrinter |> should equal (parseMap expected |> scaleUp |> scaledCellArrayPrinter)
+
+        [<Test>]
+        member _.``Scaled movement - move down``() =
+            let input = "######\n#.@OO#\n#....#\n######"
+            let expected = "######\n#..OO#\n#.@..#\n######"
+            let map = parseMap input |> scaleUp
+            let moved = moveDownScaled map
+            moved |> scaledCellArrayPrinter |> should equal (parseMap expected |> scaleUp |> scaledCellArrayPrinter)
+
+        // Game logic tests
+        [<Test>]
+        member _.``Part 1 example``() =
+            let map, moves = parse exampleInput
+            part1 (map, moves) |> should equal 2028
+
+        [<Test>]
+        member _.``Part 2 example``() =
+            let map, moves = parse exampleInputLarge
+            part2 (map, moves) |> should equal 9021
 
 
 [<EntryPoint>]
