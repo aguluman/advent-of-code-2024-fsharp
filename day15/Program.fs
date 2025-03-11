@@ -78,14 +78,14 @@ let part1 ((map, moves): Cell[][] * Direction seq) =
     let map =
         (map, moves)
         ||> Seq.fold (fun map direction ->
-            let mv =
+            let movement =
                 match direction with
                 | Up -> moveUp
                 | Left -> moveLeft
                 | Down -> moveDown
                 | Right -> moveRight
 
-            mv map)
+            movement map)
 
     List.allPairs [ 0 .. (map.Length - 1) ] [ 0 .. (map[0].Length - 1) ]
     |> List.sumBy (fun (i, j) -> if map[i][j] = Box then 100 * i + j else 0)
