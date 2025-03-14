@@ -208,7 +208,8 @@ let parse (input: string) =
 
         
 module Tests =
-    let exampleInput = "###############
+    // Example maze inputs from the challenge
+    let exampleMaze1 = "###############
 #.......#....E#
 #.#.###.#.###.#
 #.....#.#...#.#
@@ -224,9 +225,58 @@ module Tests =
 #S..#.....#...#
 ###############"
 
-    [<Test>]
-    let ``lowest point a Reindeer could possibly get``() =
-        parse exampleInput |> part1 |> should equal 7036
+    let exampleMaze2 = "#################
+#...#...#...#..E#
+#.#.#.#.#.#.#.#.#
+#.#.#.#...#...#.#
+#.#.#.#.###.#.#.#
+#...#.#.#.....#.#
+#.#.#.#.#.#####.#
+#.#...#.#.#.....#
+#.#.#####.#.###.#
+#.#.#.......#...#
+#.#.###.#####.###
+#.#.#...#.....#.#
+#.#.#.#####.###.#
+#.#.#.........#.#
+#.#.#.#########.#
+#S#.............#
+#################"
+
+    // Helper function for maze visualization
+    let printMaze (maze: char[][]) =
+        printfn "\nMaze representation:"
+        maze |> Array.iter (fun row ->
+            row |> Array.iter (fun cell -> printf "%c" cell)
+            printfn "")
+
+    [<TestFixture>]
+    type Day16Tests() =
+        
+        [<Test>]
+        member _.``lowest point a Reindeer could possibly get``() =
+            let maze = parse exampleMaze1
+            part1 maze |> should equal 7036
+
+        [<Test>]
+        member _.``lowest point a Reindeer could possibly get on a larger hill``() =
+            let maze = parse exampleMaze2
+            part1 maze |> should equal 11048
+            
+        [<Test>]
+        member _.``points on optimal path through Reindeer Hills``() =
+            let maze = parse exampleMaze1
+            part2 maze |> should equal 45
+            
+        [<Test>]
+        member _.``points on optimal path through larger Reindeer hills``() =
+            let maze = parse exampleMaze2
+            part2 maze |> should equal 64
+            
+        [<Test>]
+        member _.``maze visualization``() =
+            let maze = parse exampleMaze1
+            printMaze maze
 
 
 [<EntryPoint>]
