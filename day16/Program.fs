@@ -3,55 +3,6 @@
 open System.Diagnostics
 open NUnit.Framework
 open FsUnit
-open System.Collections.Generic
-
-// Simple priority queue implementation
-type PriorityQueue<'T>() = 
-    let heap = ResizeArray<'T * int>()
-    
-    member _.Enqueue (item: 'T, priority: int) =
-        heap.Add((item, priority))
-        let rec bubbleUp i =
-            if i = 0 then () else
-            let parent = (i - 1) / 2
-            if snd heap.[parent] <= snd heap.[i] then ()
-            else
-                let tmp = heap.[i]
-                heap.[i] <- heap.[parent]
-                heap.[parent] <- tmp
-                bubbleUp parent
-        bubbleUp (heap.Count - 1)
-    
-    member _.Dequeue() =
-        if heap.Count = 0 then failwith "Empty queue"
-        let result = fst heap.[0]
-        
-        heap.[0] <- heap.[heap.Count - 1]
-        heap.RemoveAt(heap.Count - 1)
-        
-        let rec bubbleDown i =
-            let left = 2 * i + 1
-            let right = 2 * i + 2
-            let smallest = 
-                if left >= heap.Count then i
-                elif snd heap.[left] < snd heap.[i] then left
-                else i
-            let smallest =
-                if right >= heap.Count then smallest
-                elif snd heap.[right] < snd heap.[smallest] then right
-                else smallest
-            if smallest = i then ()
-            else
-                let tmp = heap.[i]
-                heap.[i] <- heap.[smallest]
-                heap.[smallest] <- tmp
-                bubbleDown smallest
-        
-        if heap.Count > 0 then bubbleDown 0
-        result
-    
-    member _.IsEmpty = heap.Count = 0
-    member _.Count = heap.Count
 
 type Direction =
     | E
@@ -113,39 +64,38 @@ type Edge = {
 
 
 let dijkstra (start: Node) (edges: Edge list) = 
-    let adjacent = edges |> List.groupBy (fun e -> e.From) |> Map.ofList
+    let adjacent = edges |> List.groupBy (fun e -> e.From) |> Map
+
+    let relax (from: Node) (e: Edge) (dist: Map<Node, int>) =
+        let distance = dist[from]
+        let newDistance = distance + e.Cost
+
+        match Map.tryFind e.To dist with
+        | Some distance' when newDistance < distance' -> dist |> Map.add e.To newDistance |> Some
+        | None -> dist |> Map.add e.To newDistance |> Some
+        | _ -> None
+
+    let transition (node: Node) distance = 
+        let newNodes, distance =
+            (distance, adjacent[node])
+            ||> List.mapFold (fun distance edge -> 
+                match relax node edge distance with
+                | Some distance -> Some edge.To, distance
+                | None -> None, distance)
+
+        List.choose id newNodes, distance
     
-    let pq = PriorityQueue<Node>()
-    let distances = Dictionary<Node, int>()
+    let rec solve (nodes: Node list) distance =
+        if List.isEmpty nodes then
+            distance
+        else
+            let newNodes, newDistance =
+                (distance, nodes) ||> List.mapFold (
+                    fun distance node -> transition node distance)
+
+            solve (List.concat newNodes) newDistance
     
-    pq.Enqueue(start, 0)
-    distances.[start] <- 0
-    
-    let mutable result = Map.empty
-    
-    while not pq.IsEmpty do
-        let node = pq.Dequeue()
-        let dist = distances.[node]
-        
-        if not (result.ContainsKey node) then
-            result <- result.Add(node, dist)
-            
-            match Map.tryFind node adjacent with
-            | Some neighbors ->
-                for edge in neighbors do
-                    let newDist = dist + edge.Cost
-                    
-                    let shouldUpdate =
-                        match distances.TryGetValue(edge.To) with
-                        | true, oldDist -> newDist < oldDist
-                        | false, _ -> true
-                    
-                    if shouldUpdate then
-                        distances.[edge.To] <- newDist
-                        pq.Enqueue(edge.To, newDist)
-            | None -> ()
-    
-    result
+    solve [ start ] (Map [ (start, 0)])
 
 
 let collectEdges (maze: char[][]) =
@@ -176,52 +126,8 @@ let findIndex2D (a: 'T[][]) (v: 'T) =
     |> List.find (fun (i, j) -> a[i][j] = v)
 
 
-let getNeighbors (node: Node) (maze: char[][]) =
-    let neighbors = ResizeArray<Node * int>()
-    
-    // Forward movement
-    match node.Forward(maze) with
-    | Some nextNode -> neighbors.Add(nextNode, 1)
-    | None -> ()
-    
-    // Rotations
-    for rotatedNode in node.Rotate() do
-        neighbors.Add(rotatedNode, 1000)
-    
-    neighbors |> Seq.toList
-
-let dijkstraOnDemand (start: Node) (maze: char[][]) =
-    let pq = PriorityQueue<Node>()
-    let distances = Dictionary<Node, int>()
-    
-    pq.Enqueue(start, 0)
-    distances.[start] <- 0
-    
-    let mutable result = Map.empty
-    
-    while not pq.IsEmpty do
-        let node = pq.Dequeue()
-        let dist = distances.[node]
-        
-        if not (result.ContainsKey node) then
-            result <- result.Add(node, dist)
-            
-            for (nextNode, cost) in getNeighbors node maze do
-                let newDist = dist + cost
-                
-                let shouldUpdate =
-                    match distances.TryGetValue(nextNode) with
-                    | true, oldDist -> newDist < oldDist
-                    | false, _ -> true
-                
-                if shouldUpdate then
-                    distances.[nextNode] <- newDist
-                    pq.Enqueue(nextNode, newDist)
-    
-    result
-
-// Replace all uses of dijkstra with dijkstraOnDemand
 let part1 (maze: char[][]) = 
+    let edges = collectEdges maze
     let start_i, start_j = findIndex2D maze 'S'
     let end_i, end_j = findIndex2D maze 'E'
 
@@ -231,7 +137,7 @@ let part1 (maze: char[][]) =
         Direction = E
     }
 
-    let distance = dijkstraOnDemand start maze
+    let distance = dijkstra start edges
 
     [E; N; W; S]
     |> List.map (fun direction -> 
@@ -240,13 +146,12 @@ let part1 (maze: char[][]) =
             Column = end_j;
             Direction = direction
         }
-        match Map.tryFind goal distance with
-        | Some d -> d
-        | None -> System.Int32.MaxValue)
+        distance[goal])
     |> List.min
 
 
 let part2 (maze: char[][]) =
+    let edges = collectEdges maze
     let start_i, start_j = findIndex2D maze 'S'
     let end_i, end_j = findIndex2D maze 'E'
 
@@ -256,11 +161,9 @@ let part2 (maze: char[][]) =
         Direction = E
     }
 
-    // Run forward Dijkstra once
-    let forwardDist = dijkstraOnDemand start maze
+    let distance = dijkstra start edges
 
-    // Find the best direction at the endpoint
-    let bestDir = 
+    let direction =
         [E; N; W; S]
         |> List.minBy (fun direction -> 
             let goal = {
@@ -268,40 +171,34 @@ let part2 (maze: char[][]) =
                 Column = end_j;
                 Direction = direction
             }
-            match Map.tryFind goal forwardDist with
-            | Some d -> d
-            | None -> System.Int32.MaxValue)
-    
-    let endNode = { 
+            distance[goal])
+
+    let goal = { 
         Row = end_i
         Column = end_j
-        Direction = bestDir }
-    
-    let minDist = 
-        match Map.tryFind endNode forwardDist with
-        | Some d -> d
-        | None -> System.Int32.MaxValue
-    
-    // Create a reversed maze for backward Dijkstra
-    let revMaze = Array.map Array.copy maze
-    
-    // Run backward Dijkstra
-    let backwardDist = dijkstraOnDemand endNode maze
-    
-    // Use HashSet for faster lookup
-    let onPath = HashSet<int * int>()
-    
-    for i in 0 .. maze.Length - 1 do
-        for j in 0 .. maze[0].Length - 1 do
-            if maze[i][j] <> '#' then
-                for dir in [E; N; W; S] do
-                    let node = { Row = i; Column = j; Direction = dir }
-                    match Map.tryFind node forwardDist, Map.tryFind node backwardDist with
-                    | Some fd, Some bd when fd + bd = minDist -> 
-                        onPath.Add((i, j)) |> ignore
-                    | _ -> ()
-    
-    onPath.Count
+        Direction = direction }
+
+    let reversedEdges = edges |> List.map (fun edge -> { edge with From = edge.To; To = edge.From })
+    let reversedPathDistance = dijkstra goal reversedEdges
+
+    let minDistance = part1 maze
+
+    List.allPairs [ 0 .. (maze.Length - 1) ] [ 0 .. (maze[0].Length - 1) ]
+    |> List.filter (fun (i, j) -> 
+        if maze[i][j] = '#' then
+            false
+        else
+            [ E; N; W; S ]
+            |> List.exists (fun direction ->
+                let node = {
+                    Row = i;
+                    Column = j;
+                    Direction = direction
+                }
+                match Map.tryFind node distance, Map.tryFind node reversedPathDistance with
+                | Some d, Some rd when d + rd = minDistance -> true
+                | _ -> false))
+    |> List.length
     
 
 
