@@ -247,7 +247,7 @@ module Tests =
     let printMaze (maze: char[][]) =
         printfn "\nMaze representation:"
         maze |> Array.iter (fun row ->
-            row |> Array.iter (fun cell -> printf "%c" cell)
+            row |> Array.iter (fun cell -> printf $"%c{cell}")
             printfn "")
 
     [<TestFixture>]
