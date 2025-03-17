@@ -4,6 +4,16 @@ open System.Diagnostics
 open NUnit.Framework
 open FsUnit
 
+
+// 0 adv: A <- A / 2^■
+// 1 bxl: B <- B xor ■
+// 2 bst: B <- ■ % 8
+// 3 jnz: A ≠ 0 ⇒ ip <- ■
+// 4 bxc: B <- B xor C
+// 5 out: ■ % 8
+// 6 bdv: B <- A / 2^■
+// 7 cdv: C <- A / 2^■
+
 type CpuRegister = {
     Accumulator: int64;
     RegisterB: int64;
