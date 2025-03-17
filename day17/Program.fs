@@ -4,36 +4,36 @@ open System.Diagnostics
 open NUnit.Framework
 open FsUnit
 
-type Register = {
-    A: int64;
-    B: int64;
-    C: int64
+type CpuRegister = {
+    Accumulator: int64;
+    RegisterB: int64;
+    RegisterC: int64
 }
 
-type Env = {
-    Ip: int;
-    Register: Register
-    Program: int[]
-    Out: int64 list
+type CpuState = {
+    InstructionPointer: int;
+    Register: CpuRegister
+    Instructions: int[]
+    Outputs: int64 list
 }
 
-let rec pow' x n =
-    if n = 0L then 1L
-    else if n % 2L = 0L then pow' (x * x) (n / 2L)
-    else x * pow' x (n - 1L)
+let rec PowerOfTwo baseValue exponent =
+    if exponent = 0L then 1L
+    else if exponent % 2L = 0L then PowerOfTwo (baseValue * baseValue) (exponent / 2L)
+    else baseValue * PowerOfTwo baseValue (exponent - 1L)
 
 
-let execute register program halt =
-    let rec f env =
-        match halt env with
+let execute initialregister initialprogram haltcondition =
+    let rec step state =
+        match haltcondition state with
         | Some out -> out
         | None -> 
             let {
-                    Ip = ip
+                    InstructionPointer = ip
                     Register = reg
-                    Program = program
-                    Out = out } =
-                env
+                    Instructions = program
+                    Outputs = out } =
+                state
 
             let combo operand =
                 match operand with
@@ -41,70 +41,70 @@ let execute register program halt =
                 | 1
                 | 2
                 | 3 as x -> int64 x
-                | 4 -> reg.A
-                | 5 -> reg.B
-                | 6 -> reg.C
+                | 4 -> reg.Accumulator
+                | 5 -> reg.RegisterB
+                | 6 -> reg.RegisterC
                 | x -> failwith $"{x} !?"
             
             let opcode = program[ip]
             let operand = program[ip + 1]
 
-            let newEnv = 
+            let newState = 
                 match opcode with
-                | 0 -> { env with 
-                            Ip = ip + 2
+                | 0 -> { state with 
+                            InstructionPointer = ip + 2
                             Register = 
                                 { reg with 
-                                    A = reg.A / pow' 2 (combo operand) } }
+                                    Accumulator = reg.Accumulator / PowerOfTwo 2 (combo operand) } }
                 | 1 -> 
-                    { env with 
-                        Ip = ip + 2
-                        Register = { reg with B = reg.B ^^^ operand } }
+                    { state with 
+                        InstructionPointer = ip + 2
+                        Register = { reg with RegisterB = reg.RegisterB ^^^ operand } }
                 | 2 -> 
-                    { env with 
-                        Ip = ip + 2
-                        Register = { reg with B = combo operand % 8L } }
+                    { state with 
+                        InstructionPointer = ip + 2
+                        Register = { reg with RegisterB = combo operand % 8L } }
                 | 3 -> 
-                    if reg.A = 0 then 
-                        { env with Ip = ip + 2}
+                    if reg.Accumulator = 0 then 
+                        { state with InstructionPointer = ip + 2}
                     else 
-                        { env with Ip = operand }
+                        { state with InstructionPointer = operand }
                 | 4 -> 
-                    { env with 
-                        Ip = ip + 2
-                        Register = { reg with B = reg.B ^^^ reg.C } }
+                    { state with 
+                        InstructionPointer = ip + 2
+                        Register = { reg with RegisterB = reg.RegisterB ^^^ reg.RegisterC } }
                 | 5 -> 
-                    { env with 
-                        Ip = ip + 2
-                        Out = combo operand % 8L :: out}
+                    { state with 
+                        InstructionPointer = ip + 2
+                        Outputs = combo operand % 8L :: out}
                 | 6 -> 
-                    { env with 
-                        Ip = ip + 2
+                    { state with 
+                        InstructionPointer = ip + 2
                         Register = 
                             { reg with 
-                                B = reg.A / pow' 2 (combo operand) } }
+                                RegisterB = reg.Accumulator / PowerOfTwo 2 (combo operand) } }
                 | 7 -> 
-                    { env with 
-                        Ip = ip + 2 
+                    { state with 
+                        InstructionPointer = ip + 2 
                         Register = 
                             { reg with 
-                                C = reg.A / pow' 2 (combo operand) } }
+                                RegisterC = reg.Accumulator / PowerOfTwo 2 (combo operand) } }
                 | x -> failwith $"{x} !?"
             
-            f newEnv
+            step newState
     
-    f
-        { Ip = 0
-          Register = register
-          Program = program
-          Out = [] }
+    step
+        { InstructionPointer = 0
+          Register = initialregister
+          Instructions = initialprogram
+          Outputs = [] }
 
 
-let outputOnHalt env = 
+let outputOnHalt state = 
     if 
-        env.Ip >= env.Program.Length 
+        state.InstructionPointer >= state.Instructions.Length 
     then
-        env.Out 
+        state.Outputs 
         |> Array.ofList 
         |> Array.map int 
         |> Array.rev 
@@ -112,13 +112,13 @@ let outputOnHalt env =
     else
         None
 
-let part1 (register: Register) (program: int[]) =
-    let out = execute register program outputOnHalt
-    out |> Array.map string |> String.concat ","
+let part1 (register: CpuRegister) (program: int[]) =
+    let output = execute register program outputOnHalt
+    output |> Array.map string |> String.concat ","
 
 
 
-let part2 (register: Register) (program: int[]) =
+let part2 (register: CpuRegister) (program: int[]) =
     // reversing
     //
     // do
@@ -138,10 +138,10 @@ let part2 (register: Register) (program: int[]) =
         else
             [ 0..7 ]
             |> List.tryPick (fun j ->
-                let a = a * 8L + int64 j
-                let out = execute { register with A = a } program outputOnHalt
+                let accumulator = a * 8L + int64 j
+                let output = execute { register with Accumulator = accumulator } program outputOnHalt
 
-                if out = program[(i - 1) ..] then find (i - 1) a else None)
+                if output = program[(i - 1) ..] then find (i - 1) accumulator else None)
 
     find program.Length 0 |> Option.get
 
@@ -170,9 +170,9 @@ let parse (input: string) =
         |> Option.defaultValue 0L
     
     let register = {
-        A = getRegisterValue "Register A:"
-        B = getRegisterValue "Register B:"
-        C = getRegisterValue "Register C:"
+        Accumulator = getRegisterValue "Register A:"
+        RegisterB = getRegisterValue "Register B:"
+        RegisterC = getRegisterValue "Register C:"
     }
     
     // Parse program
@@ -204,16 +204,16 @@ Program: 0,3,5,4,3,0"
     type Day17Tests() =
         
         // Helper function to test register values after execution
-        let testRegisterValues (registerA: int64) (registerB: int64) (registerC: int64) (programNums: int list) 
+        let testRegisterValues (registerA: int64) (registerB: int64) (registerC: int64) (programNumbers: int list) 
                               (expectedA: int64) (expectedB: int64) (expectedC: int64) =
-            let register = { A = registerA; B = registerB; C = registerC }
-            let program = programNums |> Array.ofList
+            let register = { Accumulator = registerA; RegisterB = registerB; RegisterC = registerC }
+            let program = programNumbers |> Array.ofList
             
             // Custom halt function to capture final register state
             let mutable finalRegister = None
-            let haltWithRegisters env = 
-                if env.Ip >= env.Program.Length then
-                    finalRegister <- Some env.Register
+            let haltWithRegisters state = 
+                if state.InstructionPointer >= state.Instructions.Length then
+                    finalRegister <- Some state.Register
                     Some [||]  // Return empty output to complete execution
                 else
                     None
@@ -222,15 +222,15 @@ Program: 0,3,5,4,3,0"
             
             match finalRegister with
             | Some regs ->
-                regs.A |> should equal expectedA
-                regs.B |> should equal expectedB
-                regs.C |> should equal expectedC
+                regs.Accumulator |> should equal expectedA
+                regs.RegisterB |> should equal expectedB
+                regs.RegisterC |> should equal expectedC
             | None ->
                 failwith "Program didn't halt properly"
         
         // Helper to test output-producing programs
         let testOutput (registerA: int64) (registerB: int64) (registerC: int64) (programNums: int list) (expectedOutput: int list) =
-            let register = { A = registerA; B = registerB; C = registerC }
+            let register = { Accumulator = registerA; RegisterB = registerB; RegisterC = registerC }
             let program = programNums |> Array.ofList
             let output = execute register program outputOnHalt
             output |> Array.toList |> should equal expectedOutput
@@ -270,16 +270,16 @@ Program: 0,3,5,4,3,0"
             let register, program = parse exampleInput1
             // This is more for informational purposes
             printfn "\nInitial register state:"
-            printfn "  Accumulator: %d" register.A
-            printfn "  Register B: %d" register.B
-            printfn "  Register C: %d" register.C
+            printfn "  Accumulator: %d" register.Accumulator
+            printfn "  Register B: %d" register.RegisterB
+            printfn "  Register C: %d" register.RegisterC
             printfn "Program length: %d" program.Length
             printfn "Program content: %s" (program |> Array.map string |> String.concat " ")
             
             // Still need an assertion for the test to be valid
-            register.A |> should equal 729L
-            register.B |> should equal 0L
-            register.C |> should equal 0L
+            register.Accumulator |> should equal 729L
+            register.RegisterB |> should equal 0L
+            register.RegisterC |> should equal 0L
             program |> should haveLength 6
             
         // Test descriptions based on challenge descriptions
