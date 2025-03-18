@@ -33,9 +33,9 @@ let rec PowerOfTwo baseValue exponent =
     else baseValue * PowerOfTwo baseValue (exponent - 1L)
 
 
-let execute initialregister initialprogram haltcondition =
+let execute initialRegister initialProgram haltCondition =
     let rec step state =
-        match haltcondition state with
+        match haltCondition state with
         | Some out -> out
         | None -> 
             let {
@@ -105,8 +105,8 @@ let execute initialregister initialprogram haltcondition =
     
     step
         { InstructionPointer = 0
-          Register = initialregister
-          Instructions = initialprogram
+          Register = initialRegister
+          Instructions = initialProgram
           Outputs = [] }
 
 
@@ -131,7 +131,7 @@ let part1 (register: CpuRegister) (program: int[]) =
 let part2 (register: CpuRegister) (program: int[]) =
     // reversing
     //
-    // do
+    // does
     //   B <- A % 8
     //   B <- B xor 5
     //   C <- A / (2 ** B)
@@ -142,18 +142,36 @@ let part2 (register: CpuRegister) (program: int[]) =
     // while (A <> 0)
     //
 
-    let rec find i a =
-        if i = 0 then
-            Some a
-        else
-            [ 0..7 ]
-            |> List.tryPick (fun j ->
-                let accumulator = a * 8L + int64 j
-                let output = execute { register with Accumulator = accumulator } program outputOnHalt
-
-                if output = program[(i - 1) ..] then find (i - 1) accumulator else None)
-
-    find program.Length 0 |> Option.get
+    // Tail-recursive implementation using a work queue
+    let rec searchTailRec workQueue =
+        match workQueue with
+        | [] -> 
+            // No solution found after exhausting all possibilities
+            failwith "No solution found"
+            
+        | (0, acc)::_ ->
+            // Found solution (i=0)
+            acc
+            
+        | (i, acc)::rest ->
+            // Try each possible digit (0-7) at this position
+            let newWork = 
+                [0..7]
+                |> List.choose (fun j ->
+                    let newAcc = acc * 8L + int64 j
+                    let out = execute { register with Accumulator = newAcc } program outputOnHalt
+                    
+                    if out = program[(i - 1)..] then
+                        Some (i - 1, newAcc)  // It works. Add to work queue
+                    else
+                        None  // Doesn't work, discard
+                )
+            
+            // Continue search with new work items (depth-first approach)
+            searchTailRec (newWork @ rest)
+    
+    // Start with the initial work item: (program length, starting accumulator)
+    searchTailRec [(program.Length, 0L)]
 
 
 
@@ -219,7 +237,7 @@ Program: 0,3,5,4,3,0"
             let register = { Accumulator = registerA; RegisterB = registerB; RegisterC = registerC }
             let program = programNumbers |> Array.ofList
             
-            // Custom halt function to capture final register state
+            // Custom halt function to capture the final register state
             let mutable finalRegister = None
             let haltWithRegisters state = 
                 if state.InstructionPointer >= state.Instructions.Length then
@@ -280,10 +298,10 @@ Program: 0,3,5,4,3,0"
             let register, program = parse exampleInput1
             // This is more for informational purposes
             printfn "\nInitial register state:"
-            printfn "  Accumulator: %d" register.Accumulator
-            printfn "  Register B: %d" register.RegisterB
-            printfn "  Register C: %d" register.RegisterC
-            printfn "Program length: %d" program.Length
+            printfn $"  Accumulator: %d{register.Accumulator}"
+            printfn $"  Register B: %d{register.RegisterB}"
+            printfn $"  Register C: %d{register.RegisterC}"
+            printfn $"Program length: %d{program.Length}"
             printfn "Program content: %s" (program |> Array.map string |> String.concat " ")
             
             // Still need an assertion for the test to be valid
