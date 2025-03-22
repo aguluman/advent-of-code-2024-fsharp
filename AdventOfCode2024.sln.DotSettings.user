@@ -7,6 +7,11 @@
     &lt;TestId&gt;NUnit3x::2D451576-12A8-44F1-9D9F-D22ABEEF3DF8::net9.0::day15+Day15TestsSuites+Day15Tests&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=5eab3d11_002Df791_002D4ac5_002D8869_002D02cd6cac0bb0/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Day17Tests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
+  &lt;TestAncestor&gt;&#xD;
+    &lt;TestId&gt;NUnit3x::7C015811-B36F-40CB-BAF4-32B46A9B29C0::net9.0::day17+Tests+Day17Tests&lt;/TestId&gt;&#xD;
+  &lt;/TestAncestor&gt;&#xD;
+&lt;/SessionState&gt;</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=d106a5b4_002Daa23_002D4e9b_002D96fb_002D8442c0703bea/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Day16Tests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;NUnit3x::2F0A635E-5D79-41AA-AC5A-602A71A711EB::net9.0::day16+Tests+Day16Tests&lt;/TestId&gt;&#xD;
