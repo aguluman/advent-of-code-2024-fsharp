@@ -1,60 +1,75 @@
 ﻿module day18
 
 open System.Diagnostics
+open System.Collections.Generic
 open NUnit.Framework
 open FsUnit
 
-let solve n  positions = 
-    let positions = Set.ofSeq positions
-
-    let transition (x, y) distance =
-        let newNodes , newDistance =
-            (distance, [ (-1, 0); (0, -1); (1, 0); (0, 1); ])
-            ||> List.mapFold (fun distance  (dx, dy) -> 
+let solve n positions = 
+    // Convert to array for faster lookup during BFS
+    let positionsSet = Set.ofSeq positions
+    
+    // Use mutable data structures for BFS
+    let queue = Queue<int * int>()
+    let distance = Dictionary<int * int, int>()
+    
+    // Initialize with starting position
+    queue.Enqueue((0, 0))
+    distance.[(0, 0)] <- 0
+    
+    // Early termination flag
+    let mutable found = false
+    
+    // BFS implementation with early termination
+    while not found && queue.Count > 0 do
+        let (x, y) = queue.Dequeue()
+        let currentDist = distance.[(x, y)]
+        
+        // Check if we've reached the target
+        if (x, y) = (n, n) then
+            found <- true
+        else
+            // Check all four directions
+            for (dx, dy) in [(-1, 0); (0, -1); (1, 0); (0, 1)] do
                 let nx, ny = x + dx, y + dy
                 
-                if 
-                    nx >= 0
-                    && nx <= n
-                    && ny >= 0
-                    && ny <= n
-                    && not (Set.contains (nx, ny) positions)
-                    && not (Map.containsKey (nx, ny) distance)
-                then
-                    Some(nx, ny), distance |> Map.add (nx, ny) (distance[(x, y)] + 1)
-                else
-                    None, distance)
-            
-        List.choose id newNodes, newDistance
-
-    let rec bfs nodes distance =
-        if List.isEmpty nodes then
-            distance
-        else
-            let newNodes, newDistance =
-                (distance, nodes) ||> List.mapFold (fun distance node -> transition node distance)
-
-            bfs (List.concat newNodes) newDistance
-
-    let distance = bfs [ (0, 0) ] (Map [ ((0, 0), 0) ])
+                // Check bounds and if position is valid
+                if nx >= 0 && nx <= n && 
+                   ny >= 0 && ny <= n && 
+                   not (Set.contains (nx, ny) positionsSet) && 
+                   not (distance.ContainsKey(nx, ny)) then
+                    
+                    queue.Enqueue((nx, ny))
+                    distance.[(nx, ny)] <- currentDist + 1
     
-    Map.tryFind (n, n) distance 
-
+    // Return the shortest path length if found
+    if distance.ContainsKey((n, n)) then 
+        Some distance.[(n, n)] 
+    else 
+        None
 
 let part1 ((n, bytes, positions): int * int * (int * int) seq) =
     solve n (Seq.take bytes positions) |> Option.get
 
-
 let part2 ((n: int, positions): (int * (int * int) seq)) =
     let positions = List.ofSeq positions
-
+    
+    // Cache of previous solve results to avoid redundant calculations
+    let solutionCache = Dictionary<int, Option<int>>()
+    
+    let checkSolvable mid =
+        if not (solutionCache.ContainsKey(mid)) then
+            solutionCache.[mid] <- solve n positions[..mid]
+        solutionCache.[mid]
+    
+    // Binary search to find the first blocking position
     let rec bisect ok ng =
         if ok + 1 = ng then 
             ng
         else 
             let mid = (ok + ng) / 2
-
-            if solve n positions[..mid] |> Option.isSome then
+            
+            if checkSolvable mid |> Option.isSome then
                 bisect mid ng
             else
                 bisect ok mid
@@ -68,11 +83,8 @@ let parse (input: string) =
         let line = line.Split","
         int line[0], int line[1])
 
-
-
 module Tests =
-
-// Example input from the challenge
+    // Example input from the challenge
     let exampleInput = "5,4
 4,2
 4,5
@@ -98,6 +110,7 @@ module Tests =
 0,5
 1,6
 2,0"
+
 
     [<Test>]
     let ``grid visualization`` () =
