@@ -1,4 +1,16 @@
-﻿module day18
+﻿/// Day 18: RAM Run
+///
+/// This module implements a solution to navigate through a corrupted memory space
+/// where bytes are falling and blocking paths.
+/// The challenge involves finding the
+/// shortest path through a grid and determining the first byte that makes the exit
+/// unreachable.
+///
+/// The memory space is represented as a grid where:
+/// - (0,0) is the starting position (top-left corner)
+/// - (gridSize, gridSize) is the exit position (bottom-right corner)
+/// - Corrupted memory positions cannot be entered
+module day18
 
 open System.Diagnostics
 open System.Collections.Generic
@@ -6,99 +18,127 @@ open System.Threading.Tasks
 open NUnit.Framework
 open FsUnit
 
-// Optimization #2: Define directions as a static array
+/// Defines the four possible movement directions: up, left, down, right
 let directions = [|(-1, 0); (0, -1); (1, 0); (0, 1)|]
 
-let solve n positions = 
-    // Optimization #1: Use grid array instead of Set for faster lookups
-    let grid = Array2D.create (n+1) (n+1) false
-    for (x, y) in positions do
-        if x >= 0 && x <= n && y >= 0 && y <= n then
-            grid.[y, x] <- true
+/// Creates a memory grid representation and finds the shortest path from start to exit
+///
+/// Uses Breadth-First Search to efficiently find the shortest path:
+/// 1. Start at position (0,0) with distance 0
+/// 2.
+/// Explore adjacent positions in all four directions
+/// 3. For each reachable uncorrupted position, record distance
+/// 4. Continue until BFS reaches the destination or explores all reachable positions
+///
+/// @param gridSize Size of the memory grid (gridSize+1 x gridSize+1)
+/// @param corruptedPositions Coordinates (x,y) of corrupted memory locations
+/// @return Some distance if a path exists, None if destination is unreachable
+let findShortestPath gridSize corruptedPositions = 
+    // Create a grid representation of memory space
+    let memoryGrid = Array2D.create (gridSize+1) (gridSize+1) false
+    for posX, posY in corruptedPositions do
+        if posX >= 0 && posX <= gridSize && posY >= 0 && posY <= gridSize then
+            memoryGrid[posY, posX] <- true
     
     // Use mutable data structures for BFS
-    let queue = Queue<int * int>()
-    let distance = Dictionary<int * int, int>()
+    let visitQueue = Queue<int * int>()
+    let distanceMap = Dictionary<int * int, int>()
     
-    // Initialize with starting position
-    queue.Enqueue((0, 0))
-    distance.[(0, 0)] <- 0
+    // Initialize with the starting position
+    visitQueue.Enqueue((0, 0))
+    distanceMap[(0, 0)] <- 0
     
     // Early termination flag
-    let mutable found = false
+    let mutable exitReached = false
     
     // BFS implementation with early termination
-    while not found && queue.Count > 0 do
-        let (x, y) = queue.Dequeue()
-        let currentDist = distance.[(x, y)]
+    while not exitReached && visitQueue.Count > 0 do
+        let currentX, currentY = visitQueue.Dequeue()
+        let currentDistance = distanceMap[(currentX, currentY)]
         
-        // Check if we've reached the target
-        if (x, y) = (n, n) then
-            found <- true
+        // Check if we've reached the exit
+        if (currentX, currentY) = (gridSize, gridSize) then
+            exitReached <- true
         else
-            // Optimization #2: Check all four directions using static array
-            for i = 0 to 3 do
-                let dx, dy = directions.[i]
-                let nx, ny = x + dx, y + dy
+            // Check all four directions
+            for directionIndex = 0 to 3 do
+                let directionX, directionY = directions[directionIndex]
+                let nextX, nextY = currentX + directionX, currentY + directionY
                 
-                // Check bounds and if position is valid
-                if nx >= 0 && nx <= n && 
-                   ny >= 0 && ny <= n && 
-                   not grid.[ny, nx] && 
-                   not (distance.ContainsKey(nx, ny)) then
+                // Check the bounds, and if the position is valid (not corrupted and not visited)
+                if nextX >= 0 && nextX <= gridSize && 
+                   nextY >= 0 && nextY <= gridSize && 
+                   not memoryGrid[nextY, nextX] && 
+                   not (distanceMap.ContainsKey(nextX, nextY)) then
                     
-                    queue.Enqueue((nx, ny))
-                    distance.[(nx, ny)] <- currentDist + 1
+                    visitQueue.Enqueue((nextX, nextY))
+                    distanceMap[(nextX, nextY)] <- currentDistance + 1
     
     // Return the shortest path length if found
-    if distance.ContainsKey((n, n)) then 
-        Some distance.[(n, n)] 
+    if distanceMap.ContainsKey((gridSize, gridSize)) then 
+        Some distanceMap[(gridSize, gridSize)] 
     else 
         None
 
-let part1 ((n, bytes, positions): int * int * (int * int) seq) =
-    solve n (Seq.take bytes positions) |> Option.get
+/// Calculates the minimum steps needed to reach the exit after a specific number of bytes have fallen
+///
+/// @param gridSize Size of the memory grid
+/// @param byteCount Number of bytes to consider from the sequence
+/// @param bytePositions Sequence of (x,y) coordinates where bytes will fall
+/// @return The minimum number of steps to reach the exit
+let calculateMinSteps ((gridSize, byteCount, bytePositions): int * int * (int * int) seq) =
+    findShortestPath gridSize (Seq.take byteCount bytePositions) |> Option.get
 
-// Optimization #3: Use parallel binary search for part2
-let part2 ((n: int, positions): (int * (int * int) seq)) =
-    let positions = List.ofSeq positions
+/// Finds the first byte that makes the exit unreachable from the starting position
+///
+/// Uses binary search to efficiently find the precise byte:
+/// 1. Start with the full list of positions
+/// 2. Use binary search to narrow down the critical position
+/// 3. When found, return the exact byte coordinates
+///
+/// @param gridSize Size of the memory grid
+/// @param bytePositions Sequence of (x,y) coordinates where bytes will fall
+/// @return The (x,y) coordinates of the first byte that blocks all paths
+let findBlockingByte ((gridSize: int, bytePositions): int * (int * int) seq) =
+    let positionsList = List.ofSeq bytePositions
     
-    // Cache of previous solve results to avoid redundant calculations
+    // Cache of previous results to avoid redundant calculations
     let solutionCache = Dictionary<int, Option<int>>()
     let lockObj = obj()
     
-    let checkSolvable mid =
+    // Check if the path exists with the first 'index' bytes
+    let isPathSolvable index =
         lock lockObj (fun () ->
-            if not (solutionCache.ContainsKey(mid)) then
-                solutionCache.[mid] <- solve n positions[..mid]
-            solutionCache.[mid]
+            if not (solutionCache.ContainsKey(index)) then
+                solutionCache[index] <- findShortestPath gridSize positionsList[..index]
+            solutionCache[index]
         )
     
-    // Parallel binary search implementation
-    let findBlockingByte() =
-        // First, find approximate range using quick checks
-        let mutable low = 0
-        let mutable high = positions.Length - 1
+    // Binary search implementation with parallel optimization
+    let findBlockingByteIndex() =
+        // First, find the approximate range using quick checks
+        let mutable lowerBound = 0
+        let mutable upperBound = positionsList.Length - 1
         
         // Initial narrowing to get a smaller range
-        while high - low > 50 do
-            let mid = (low + high) / 2
-            if checkSolvable mid |> Option.isSome then
-                low <- mid
+        while upperBound - lowerBound > 50 do
+            let middleIndex = (lowerBound + upperBound) / 2
+            if isPathSolvable middleIndex |> Option.isSome then
+                lowerBound <- middleIndex
             else
-                high <- mid
+                upperBound <- middleIndex
         
-        // Once we have a narrower range, check potential blocking positions in parallel
-        let candidates = [|low..high|]
-        let results = Array.create candidates.Length None
+        // Once there is a narrower range, check potential blocking positions in parallel
+        let candidateIndices = [|lowerBound..upperBound|]
+        let results = Array.create candidateIndices.Length None
         
-        // Create parallel tasks
+        // Create parallel tasks to check each candidate
         let tasks = 
-            candidates
-            |> Array.mapi (fun idx pos -> 
+            candidateIndices
+            |> Array.mapi (fun arrayIndex positionIndex -> 
                 Task.Run(fun () -> 
-                    let result = checkSolvable pos
-                    results.[idx] <- Some (pos, result)
+                    let result = isPathSolvable positionIndex
+                    results[arrayIndex] <- Some (positionIndex, result)
                 )
             )
         
@@ -111,28 +151,42 @@ let part2 ((n: int, positions): (int * (int * int) seq)) =
         |> Array.sortBy fst
         |> Array.tryFind (fun (_, result) -> Option.isNone result)
         |> Option.map fst
-        |> Option.defaultValue high
+        |> Option.defaultValue upperBound
     
     // Get the first blocking byte
-    let blockingIndex = findBlockingByte()
-    positions.[blockingIndex]
+    let blockingIndex = findBlockingByteIndex()
+    positionsList[blockingIndex]
 
-let parse (input: string) =
+/// Parses the input string into a sequence of byte positions
+///
+/// Expected format:
+/// - Each line contains "x,y" coordinates
+/// - Coordinates are comma-separated integers
+///
+/// @param input String containing byte position data
+/// @return Sequence of (x,y) coordinates
+let parseBytePositions (input: string) =
     input.Split"\n" 
     |> Seq.map (fun line ->
-        let line = line.Split","
-        int line[0], int line[1])
+        let parts = line.Split","
+        int parts[0], int parts[1])
 
-// This benchmark function helps measure performance gains
-let benchmark name function' argument =
+/// Measures execution time of a function and returns its result
+///
+/// @param functionName Name to display in the timing output
+/// @param targetFunction Function to measure
+/// @param functionArgument Argument to pass to the function
+/// @return The result of the function call
+let benchmark name targetFunction functionArgument =
     let stopWatch = Stopwatch.StartNew()
-    let result = function' argument
+    let result = targetFunction functionArgument
     stopWatch.Stop()
-    printfn "%s: %.4f seconds" name stopWatch.Elapsed.TotalSeconds
+    printfn $"%s{name}: %.4f{stopWatch.Elapsed.TotalSeconds} seconds"
     result
 
+/// Unit tests and visualization tools for the solution
 module Tests =
-    // Example input from the challenge
+    /// Example input from the challenge
     let exampleInput = "5,4
 4,2
 4,5
@@ -159,82 +213,81 @@ module Tests =
 1,6
 2,0"
 
-
     [<Test>]
-    let ``grid visualization`` () =
-        let positions = [(1, 1); (2, 2); (0, 3)]
-        let n = 4
+    let ``Memory grid visualization`` () =
+        let corruptedPositions = [(1, 1); (2, 2); (0, 3)]
+        let gridSize = 4
         
-        // Function to create and display the grid
-        let createAndShowGrid n positions =
-            let grid = Array2D.create (n+1) (n+1) false
+        /// Creates and displays a visual representation of the memory grid
+        let visualizeMemoryGrid size positions =
+            let grid = Array2D.create (size+1) (size+1) false
             positions |> Seq.iter (fun (x, y) -> 
-                if x >= 0 && x <= n && y >= 0 && y <= n then
+                if x >= 0 && x <= size && y >= 0 && y <= size then
                     grid[y, x] <- true)
             
             printfn "Memory grid representation (# = corrupted, . = safe):"
-            for y in 0..n do
-                for x in 0..n do
-                    printf "%c" (if grid[y, x] then '#' else '.')
+            for row in 0..size do
+                for col in 0..size do
+                    printf $"%c{if grid[row, col] then '#' else '.'}"
                 printfn ""
             grid
         
-        createAndShowGrid n positions |> ignore
+        visualizeMemoryGrid gridSize corruptedPositions |> ignore
 
     [<Test>]
-    let ``algorithm tracing`` () =
-        let positions = parse exampleInput |> Seq.take 5 |> List.ofSeq
+    let ``Algorithm trace with step-by-step logging`` () =
+        let bytePositions = parseBytePositions exampleInput |> Seq.take 5 |> List.ofSeq
         
         printfn "Tracing first few bytes falling:"
         printfn "Considering positions: %s" 
-            (positions |> Seq.map (fun (x, y) -> sprintf "(%d,%d)" x y) |> String.concat " ")
+            (bytePositions |> Seq.map (fun (x, y) -> $"(%d{x},%d{y})") |> String.concat " ")
         
-        let result = solve 6 positions
+        let result = findShortestPath 6 bytePositions
         match result with
-        | Some dist -> printfn "Shortest path length: %d" dist
+        | Some distance -> printfn $"Shortest path length: %d{distance}"
         | None -> printfn "No path exists"
 
-
-    // Integration tests that mimic the main function execution
+    /// Integration test with the example input from the challenge
     [<Test>]
-    let ``full challenge with example input`` () =
-        let positions = parse exampleInput
+    let ``Full challenge with example input`` () =
+        let bytePositions = parseBytePositions exampleInput
         
-        let part1Answer = part1 (6, 12, positions)
-        printfn "Part 1: %d" part1Answer
+        let part1Answer = calculateMinSteps (6, 12, bytePositions)
+        printfn $"Part 1: %d{part1Answer}"
         part1Answer |> should equal 22
         
-        let part2Answer = part2 (6, positions)
-        printfn "Part 2: (%d,%d)" (fst part2Answer) (snd part2Answer)
+        let part2Answer = findBlockingByte (6, bytePositions)
+        printfn $"Part 2: (%d{fst part2Answer},%d{snd part2Answer})"
         part2Answer |> should equal (6, 1)
     
+    /// Performance benchmark of the solution
     [<Test>]
-    let ``performance benchmarking`` () =
-        let positions = parse exampleInput
+    let ``Performance benchmarking`` () =
+        let bytePositions = parseBytePositions exampleInput
         
         printfn "Running performance benchmark..."
         
-        let part1Input = (6, 12, positions)
-        let part2Input = (6, positions)
+        let part1Input = (6, 12, bytePositions)
+        let part2Input = (6, bytePositions)
         
-        let p1Result = benchmark "Part 1" part1 part1Input
-        let p2Result = benchmark "Part 2" part2 part2Input
+        let part1Result = benchmark "Part 1" calculateMinSteps part1Input
+        let part2Result = benchmark "Part 2" findBlockingByte part2Input
         
-        printfn "Part 1 result: %d" p1Result
-        printfn "Part 2 result: (%d,%d)" (fst p2Result) (snd p2Result)
+        printfn $"Part 1 result: %d{part1Result}"
+        printfn $"Part 2 result: (%d{fst part2Result},%d{snd part2Result})"
 
-
+/// Main entry point for the program
 [<EntryPoint>]
 let main _ = 
     let input = stdin.ReadToEnd().TrimEnd()
-    let positions = parse input
+    let bytePositions = parseBytePositions input
 
     let stopwatch = Stopwatch.StartNew()
-    let part1Result = benchmark "Part 1" part1 (70, 1024, positions)
-    let part2Result = benchmark "Part 2" part2 (70, positions)
+    let part1Result = benchmark "Part 1" calculateMinSteps (70, 1024, bytePositions)
+    let part2Result = benchmark "Part 2" findBlockingByte (70, bytePositions)
     
-    printfn "Part 1: %d" part1Result
-    printfn "Part 2: (%d,%d)" (fst part2Result) (snd part2Result)
+    printfn $"Part 1: %d{part1Result}"
+    printfn $"Part 2: (%d{fst part2Result},%d{snd part2Result})"
     
     stopwatch.Stop()
     printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
