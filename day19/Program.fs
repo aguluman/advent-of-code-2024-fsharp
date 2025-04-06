@@ -1,20 +1,21 @@
 ﻿/// <summary>
 /// Day 19: Linen Layout - Towel Pattern Arrangement Challenge
-/// 
-/// This module solves the Advent of Code Day 19 challenge that involves arranging
-/// towel patterns to match specific designs at an onsen. Each towel has a specific
-/// pattern of colored stripes, and we need to determine which designs can be created
-/// by combining these patterns in sequence.
 /// </summary>
+/// <description>
+/// Solves Advent of Code Day 19 challenge about arranging towel patterns at an onsen.
+/// The module determines which designs can be created by combining colored stripe patterns
+/// and counts the different ways to construct each design.
+/// </description>
 ///
 /// <remarks>
-/// The problem involves:
-/// - A set of available towel patterns (like "r", "wr", "gb")
-/// - A list of designs we want to create (like "brwrr", "bggr")
-/// - Task 1 - Determining which designs are possible to create by combining patterns
-/// - Task 2 - Counting how many different ways each design can be created
-/// 
-/// - See <https://adventofcode.com/2024/day/19> Problem Description
+/// Problem details:
+/// - Input: A collection of towel patterns (e.g., "r", "wr", "gb") and desired designs
+/// - Part 1: Count designs that can be constructed using available patterns
+/// - Part 2: Calculate the total number of distinct ways to create each design
+///
+/// The solutions use dynamic programming with memoization for efficiency.
+///
+/// See: <see href="https://adventofcode.com/2024/day/19">Advent of Code 2024, Day 19</see>
 /// </remarks>
 module day19
 
@@ -22,7 +23,6 @@ open System.Diagnostics
 open System.Collections.Generic
 open NUnit.Framework
 open FsUnit
-
 
 
 
@@ -35,7 +35,7 @@ open FsUnit
 /// Uses dynamic programming with memoization to avoid recalculating results:
 /// - For each position in a design, try all possible patterns
 /// - If a pattern matches the current substring, recursively check the remainder
-/// - A design is possible if there's at least one way to construct it
+/// - A design is possible if there is at least one way to construct it
 /// </remarks>
 ///
 /// <param name="patterns">Available towel patterns</param>
@@ -100,7 +100,7 @@ let part1 ((patterns, designs): string seq * string seq) =
 ///
 /// <param name="patterns">Available towel patterns</param>
 /// <param name="designs">Desired design specifications</param>
-/// <returns>Sum of the number of ways to create each design</returns>
+/// <returns>Sum out of the number of ways to create each design</returns>
 let part2 ((patterns, designs): string seq * string seq) =
     // Convert patterns to array for a faster lookup
     let patternsArray = patterns |> Seq.toArray
