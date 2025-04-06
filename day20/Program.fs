@@ -13,106 +13,133 @@ let findIndex2D (a: 'T[][]) (v: 'T) =
 
 
 
-let bfs (si, sj) (maze: char[][]) = 
-    let queue = Queue<int * int>()
-    queue.Enqueue((si, sj))
+let bfsFast (si, sj) (maze: char[][]) = 
+    let queue = Queue<struct(int * int)>(maze.Length * maze.[0].Length)
+    queue.Enqueue(struct(si, sj))
     
-    let mutable dist = Map.ofList [((si, sj), 0)]
+    let dist = Dictionary<struct(int * int), int>(maze.Length * maze.[0].Length)
+    dist.[struct(si, sj)] <- 0
+    
+    // Pre-calculate bounds
+    let rowBound, colBound = maze.Length - 1, maze.[0].Length - 1
     
     while queue.Count > 0 do
-        let (i, j) = queue.Dequeue()
-        let currentDist = dist.[(i, j)]
+        let struct(i, j) = queue.Dequeue()
+        let d = dist.[struct(i, j)]
+        let dNext = d + 1
         
-        for (di, dj) in [(-1, 0); (0, -1); (1, 0); (0, 1)] do
-            let ni, nj = i + di, j + dj
-            if ni >= 0 && ni < maze.Length && 
-               nj >= 0 && nj < maze[ni].Length && 
-               maze[ni][nj] <> '#' && 
-               not (dist.ContainsKey(ni, nj)) then
-                dist <- dist.Add((ni, nj), currentDist + 1)
-                queue.Enqueue((ni, nj))
+        // Manually unrolled loop with bounds checking first
+        if i > 0 && maze.[i-1].[j] <> '#' then
+            let next = struct(i-1, j)
+            if not (dist.ContainsKey(next)) then
+                dist.[next] <- dNext
+                queue.Enqueue(next)
                 
+        if j > 0 && maze.[i].[j-1] <> '#' then
+            let next = struct(i, j-1)
+            if not (dist.ContainsKey(next)) then
+                dist.[next] <- dNext
+                queue.Enqueue(next)
+                
+        if i < rowBound && maze.[i+1].[j] <> '#' then
+            let next = struct(i+1, j)
+            if not (dist.ContainsKey(next)) then
+                dist.[next] <- dNext
+                queue.Enqueue(next)
+                
+        if j < colBound && maze.[i].[j+1] <> '#' then
+            let next = struct(i, j+1)
+            if not (dist.ContainsKey(next)) then
+                dist.[next] <- dNext
+                queue.Enqueue(next)
     dist
-
-
-// Helper to check if a position is valid and reachable in a distance map
-let isReachable (i, j) (maze: char[][]) (dist: Map<int * int, int>) =
-    i >= 0 && i < maze.Length && j >= 0 && j < maze[i].Length && dist.ContainsKey(i, j)
-
-// Check if a wall has open paths on opposite sides
-let isBreakableWall (i, j) (maze: char[][]) =
-    maze[i][j] = '#' && 
-    ((i >= 1 && i + 1 < maze.Length && maze[i - 1][j] <> '#' && maze[i + 1][j] <> '#') ||
-     (j >= 1 && j + 1 < maze[i].Length && maze[i][j - 1] <> '#' && maze[i][j + 1] <> '#'))
-
-// Check if breaking a wall would connect areas reachable from S and E
-let wouldConnectSE (i, j) (maze: char[][]) (distFromS: Map<int * int, int>) (distFromE: Map<int * int, int>) =
-    let adjacent = [(i-1, j); (i+1, j); (i, j-1); (i, j+1)]
-    let reachableFromS = adjacent |> List.exists (fun pos -> isReachable pos maze distFromS)
-    let reachableFromE = adjacent |> List.exists (fun pos -> isReachable pos maze distFromE)
-    reachableFromS && reachableFromE
-
-
-
 
 let part1 (maze: char[][]) =
     let si, sj = findIndex2D maze 'S'
     let ei, ej = findIndex2D maze 'E'
-
-    let distFromS = bfs (si, sj) maze
-    let distFromE = bfs (ei, ej) maze
     
-    if not (distFromS.ContainsKey(ei, ej)) then
-        // No path exists, return empty result
-        []
+    let distFromS = bfsFast (si, sj) maze
+    let target = struct(ei, ej)
+    
+    if not (distFromS.ContainsKey(target)) then []
     else
-        // Find walls that could be broken to improve the path
-        let potentialWalls =
-            List.allPairs [ 0 .. (maze.Length - 1) ] [ 0 .. (maze[0].Length - 1) ]
-            |> List.filter (fun (i, j) -> 
-                isBreakableWall (i, j) maze && 
-                wouldConnectSE (i, j) maze distFromS distFromE)
-                 
-        // Create a copy of the original maze to avoid threading issues
-        let mazeCopy = maze |> Array.map Array.copy
+        let currentBest = distFromS.[target]
+        let visited = HashSet<struct(int * int)>()
+        let walls = HashSet<struct(int * int)>()
         
-        // Process walls in parallel
-        let results =
-            potentialWalls
-            |> Array.ofList
-            |> Array.Parallel.choose (fun (i, j) ->
-                // Create a local copy for this thread
-                let localMaze = mazeCopy |> Array.map Array.copy
-                localMaze[i][j] <- '.'
-                
-                // Run BFS with removed wall
-                let d = bfs (si, sj) localMaze
-                
-                // Calculate improvement
-                if Map.containsKey (ei, ej) d then
-                    Some(distFromS[(ei, ej)] - d[(ei, ej)])
-                else
-                    None)
-            |> List.ofArray
-
-        results
-        |> List.countBy id
-        |> List.sort
-
-
+        // Find walls along the path using BFS
+        let queue = Queue<struct(int * int)>()
+        queue.Enqueue(target)
+        visited.Add(target) |> ignore
+        
+        while queue.Count > 0 do
+            let struct(i, j) = queue.Dequeue()
+            for di, dj in [|(-1,0); (1,0); (0,-1); (0,1)|] do
+                let ni, nj = i + di, j + dj
+                if ni >= 0 && ni < maze.Length && nj >= 0 && nj < maze.[0].Length then
+                    let next = struct(ni, nj)
+                    if maze.[ni].[nj] = '#' then
+                        walls.Add(next) |> ignore
+                    elif not (visited.Contains(next)) && distFromS.ContainsKey(next) then
+                        visited.Add(next) |> ignore
+                        queue.Enqueue(next)
+        
+        // Process walls in parallel with minimal copying
+        let results = Dictionary<int, int>()
+        let lockObj = obj()
+        
+        // Fixed parallel processing block
+        Parallel.ForEach(walls, fun wall ->
+            let struct(wi, wj) = wall
+            let mazeCopy = Array.map Array.copy maze
+            mazeCopy.[wi].[wj] <- '.'
+            
+            let newDist = bfsFast (si, sj) mazeCopy
+            if newDist.ContainsKey(target) then
+                let improvement = currentBest - newDist.[target]
+                if improvement > 0 then
+                    lock lockObj (fun () ->
+                        results.[improvement] <- 
+                            if results.ContainsKey(improvement) then 
+                                results.[improvement] + 1 
+                            else 1)
+        ) |> ignore
+        
+        results |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Seq.toList |> List.sort
 
 let part2 (maze: char[][]) = 
     let si, sj = findIndex2D maze 'S'
-
-    let dist = bfs (si, sj) maze
-
-    List.allPairs (Map.toList dist) (Map.toList dist)
-    |> List.choose (fun (((i, j), d), ((i', j'), d')) ->
-        let e = abs (i - i') + abs (j - j')
-        if d' - d >= 0 && e <= 20 then Some(d' - d - e) else None)
-    |> List.countBy id
-    |> List.sort
-
+    let dist = bfsFast (si, sj) maze
+    
+    let results = Dictionary<int, int>()
+    let points = dist.Keys |> Seq.toArray
+    
+    // Process in chunks for better CPU utilization
+    Parallel.For(0, points.Length, fun i ->
+        let struct(x1, y1) = points.[i]
+        let d1 = dist.[struct(x1, y1)]
+        
+        let localResults = Dictionary<int, int>()
+        for j = i + 1 to points.Length - 1 do
+            let struct(x2, y2) = points.[j]
+            let d2 = dist.[struct(x2, y2)]
+            
+            let e = abs(x1 - x2) + abs(y1 - y2)
+            if e <= 20 then
+                let diff1 = d2 - d1 - e
+                if diff1 >= 0 then
+                    localResults.[diff1] <- localResults.GetValueOrDefault(diff1) + 1
+                
+                let diff2 = d1 - d2 - e
+                if diff2 >= 0 then
+                    localResults.[diff2] <- localResults.GetValueOrDefault(diff2) + 1
+                    
+        lock results (fun () ->
+            for KeyValue(k, v) in localResults do
+                results.[k] <- results.GetValueOrDefault(k) + v)
+    ) |> ignore
+    
+    results |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Seq.toList |> List.sort
 
 let parse (input: string) =
     input.Split("\n") |> Array.map (fun line -> line.TrimEnd().ToCharArray())
@@ -182,21 +209,26 @@ let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let maze = parse input
 
-    let stopwatch = Stopwatch.StartNew()
+    let timer = Stopwatch()
+    timer.Start()
 
     maze
     |> part1
     |> Seq.sumBy (fun (save, ps) -> if save >= 100 then ps else 0)
     |> printfn "Part 1: %d"
 
+    timer.Stop()
+    printfn $"Elapsed time: %.4f{timer.Elapsed.TotalSeconds} seconds"
 
+
+    timer.Restart()
 
     maze
     |> part2
     |> Seq.sumBy (fun (save, ps) -> if save >= 100 then ps else 0)
     |> printfn "Part 2: %d"
 
-    stopwatch.Stop()
-    printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
+    timer.Stop()
+    printfn $"Elapsed time: %.4f{timer.Elapsed.TotalSeconds} seconds"
 
     0
