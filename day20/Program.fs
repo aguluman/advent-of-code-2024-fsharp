@@ -38,7 +38,7 @@ open FsUnit
 /// <param name="target">The value to find</param>
 /// <returns>A tuple (row, col) representing the row and column indices of the value</returns>
 let findIndex2D (grid: 'T[][]) (target: 'T) =
-    List.allPairs [ 0 .. (grid.Length - 1) ] [ 0 .. (grid.[0].Length - 1) ]
+    List.allPairs [ 0 .. (grid.Length - 1) ] [ 0 .. (grid[0].Length - 1) ]
     |> List.find (fun (row, col) -> grid[row][col] = target)
 
 
@@ -59,43 +59,43 @@ let findIndex2D (grid: 'T[][]) (target: 'T) =
 /// <param name="maze">2D character array representing the maze</param>
 /// <returns>Dictionary mapping cell coordinates to their shortest distance from start</returns>
 let bfsFast (startRow, startCol) (maze: char[][]) = 
-    let queue = Queue<struct(int * int)>(maze.Length * maze.[0].Length)
+    let queue = Queue<struct(int * int)>(maze.Length * maze[0].Length)
     queue.Enqueue(struct(startRow, startCol))
     
-    let distances = Dictionary<struct(int * int), int>(maze.Length * maze.[0].Length)
-    distances.[struct(startRow, startCol)] <- 0
+    let distances = Dictionary<struct(int * int), int>(maze.Length * maze[0].Length)
+    distances[struct(startRow, startCol)] <- 0
     
     // Pre-calculate bounds
-    let maxRow, maxCol = maze.Length - 1, maze.[0].Length - 1
+    let maxRow, maxCol = maze.Length - 1, maze[0].Length - 1
     
     while queue.Count > 0 do
         let struct(row, col) = queue.Dequeue()
-        let distance = distances.[struct(row, col)]
+        let distance = distances[struct(row, col)]
         let nextDistance = distance + 1
         
         // Manually unrolled loop with bounds checking first
-        if row > 0 && maze.[row-1].[col] <> '#' then
+        if row > 0 && maze[row-1].[col] <> '#' then
             let nextPos = struct(row-1, col)
             if not (distances.ContainsKey(nextPos)) then
-                distances.[nextPos] <- nextDistance
+                distances[nextPos] <- nextDistance
                 queue.Enqueue(nextPos)
                 
-        if col > 0 && maze.[row].[col-1] <> '#' then
+        if col > 0 && maze[row].[col-1] <> '#' then
             let nextPos = struct(row, col-1)
             if not (distances.ContainsKey(nextPos)) then
-                distances.[nextPos] <- nextDistance
+                distances[nextPos] <- nextDistance
                 queue.Enqueue(nextPos)
                 
-        if row < maxRow && maze.[row+1].[col] <> '#' then
+        if row < maxRow && maze[row+1].[col] <> '#' then
             let nextPos = struct(row+1, col)
             if not (distances.ContainsKey(nextPos)) then
-                distances.[nextPos] <- nextDistance
+                distances[nextPos] <- nextDistance
                 queue.Enqueue(nextPos)
                 
-        if col < maxCol && maze.[row].[col+1] <> '#' then
+        if col < maxCol && maze[row].[col+1] <> '#' then
             let nextPos = struct(row, col+1)
             if not (distances.ContainsKey(nextPos)) then
-                distances.[nextPos] <- nextDistance
+                distances[nextPos] <- nextDistance
                 queue.Enqueue(nextPos)
     distances
 
@@ -129,7 +129,7 @@ let part1 (maze: char[][]) =
     
     if not (distancesFromStart.ContainsKey(endPosition)) then []
     else
-        let originalDistance = distancesFromStart.[endPosition]
+        let originalDistance = distancesFromStart[endPosition]
         let visited = HashSet<struct(int * int)>()
         let walls = HashSet<struct(int * int)>()
         
@@ -142,9 +142,9 @@ let part1 (maze: char[][]) =
             let struct(row, col) = queue.Dequeue()
             for deltaRow, deltaCol in [|(-1,0); (1,0); (0,-1); (0,1)|] do
                 let neighborRow, neighborCol = row + deltaRow, col + deltaCol
-                if neighborRow >= 0 && neighborRow < maze.Length && neighborCol >= 0 && neighborCol < maze.[0].Length then
+                if neighborRow >= 0 && neighborRow < maze.Length && neighborCol >= 0 && neighborCol < maze[0].Length then
                     let neighborPos = struct(neighborRow, neighborCol)
-                    if maze.[neighborRow].[neighborCol] = '#' then
+                    if maze[neighborRow].[neighborCol] = '#' then
                         walls.Add(neighborPos) |> ignore
                     elif not (visited.Contains(neighborPos)) && distancesFromStart.ContainsKey(neighborPos) then
                         visited.Add(neighborPos) |> ignore
@@ -158,16 +158,16 @@ let part1 (maze: char[][]) =
         Parallel.ForEach(walls, fun wallPos ->
             let struct(wallRow, wallCol) = wallPos
             let mazeWithRemovedWall = Array.map Array.copy maze
-            mazeWithRemovedWall.[wallRow].[wallCol] <- '.'
+            mazeWithRemovedWall[wallRow].[wallCol] <- '.'
             
             let newDistances = bfsFast (startRow, startCol) mazeWithRemovedWall
             if newDistances.ContainsKey(endPosition) then
-                let improvement = originalDistance - newDistances.[endPosition]
+                let improvement = originalDistance - newDistances[endPosition]
                 if improvement > 0 then
                     lock lockObj (fun () ->
-                        improvements.[improvement] <- 
+                        improvements[improvement] <- 
                             if improvements.ContainsKey(improvement) then 
-                                improvements.[improvement] + 1 
+                                improvements[improvement] + 1 
                             else 1)
         ) |> ignore
         
@@ -206,27 +206,27 @@ let part2 (maze: char[][]) =
     
     // Process in chunks for better CPU utilization
     Parallel.For(0, reachablePoints.Length, fun i ->
-        let struct(row1, col1) = reachablePoints.[i]
-        let distance1 = distances.[struct(row1, col1)]
+        let struct(row1, col1) = reachablePoints[i]
+        let distance1 = distances[struct(row1, col1)]
         
         let localInefficiencies = Dictionary<int, int>()
         for j = i + 1 to reachablePoints.Length - 1 do
-            let struct(row2, col2) = reachablePoints.[j]
-            let distance2 = distances.[struct(row2, col2)]
+            let struct(row2, col2) = reachablePoints[j]
+            let distance2 = distances[struct(row2, col2)]
             
             let manhattanDistance = abs(row1 - row2) + abs(col1 - col2)
             if manhattanDistance <= 20 then
                 let inefficiency1 = distance2 - distance1 - manhattanDistance
                 if inefficiency1 >= 0 then
-                    localInefficiencies.[inefficiency1] <- localInefficiencies.GetValueOrDefault(inefficiency1) + 1
+                    localInefficiencies[inefficiency1] <- localInefficiencies.GetValueOrDefault(inefficiency1) + 1
                 
                 let inefficiency2 = distance1 - distance2 - manhattanDistance
                 if inefficiency2 >= 0 then
-                    localInefficiencies.[inefficiency2] <- localInefficiencies.GetValueOrDefault(inefficiency2) + 1
+                    localInefficiencies[inefficiency2] <- localInefficiencies.GetValueOrDefault(inefficiency2) + 1
                     
         lock inefficiencies (fun () ->
             for KeyValue(inefficiency, count) in localInefficiencies do
-                inefficiencies.[inefficiency] <- inefficiencies.GetValueOrDefault(inefficiency) + count)
+                inefficiencies[inefficiency] <- inefficiencies.GetValueOrDefault(inefficiency) + count)
     ) |> ignore
     
     inefficiencies |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Seq.toList |> List.sort
@@ -247,6 +247,7 @@ let part2 (maze: char[][]) =
 /// <returns>2D character array representing the maze</returns>
 let parse (input: string) =
     input.Split("\n") |> Array.map (fun line -> line.TrimEnd().ToCharArray())
+
 
 
 /// <summary>
@@ -313,6 +314,8 @@ module Example =
                   (72, 22)
                   (74, 4)
                   (76, 3) ])
+            
+            
 
 /// <summary>Main entry point for the program</summary>
 [<EntryPoint>]
