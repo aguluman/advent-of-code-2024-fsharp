@@ -1,6 +1,6 @@
 [Advent of Code 2024](https://adventofcode.com/2024) in F# on Windows OS
 
-# To validate the functions with the Test-Cases
+## To validate the functions with the Test-Cases
 
 ```
 $ dotnet test

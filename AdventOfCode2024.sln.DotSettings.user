@@ -3,17 +3,15 @@
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003AXunit_002Ecs_002Fl_003A_002E_002E_003F_002E_002E_003FAppData_003FRoaming_003FJetBrains_003FRider2024_002E3_003Fresharper_002Dhost_003FDecompilerCache_003Fdecompiler_003Fd4e49dfb89648a8bf8dc011cfa3b5c07e800_003F87_003Fcd5896fa_003FXunit_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/Environment/Highlighting/HighlightingSourceSnapshotLocation/@EntryValue">C:\Users\chukw\AppData\Local\JetBrains\Rider2024.3\resharper-host\temp\Rider\vAny\CoverageData\_AdventOfCode2024.-640465835\Snapshot\snapshot.utdcvr</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=248e173d_002D8f21_002D4a9b_002Da4c9_002Dced3c99b0997/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="testPart1" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::2D451576-12A8-44F1-9D9F-D22ABEEF3DF8::net9.0::day15+Day15TestsSuites+Day15Tests&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
+  &lt;And&gt;&#xD;
+    &lt;TestAncestor&gt;&#xD;
+      &lt;TestId&gt;NUnit3x::2D451576-12A8-44F1-9D9F-D22ABEEF3DF8::net9.0::day15+Day15TestsSuites+Day15Tests&lt;/TestId&gt;&#xD;
+      &lt;TestId&gt;NUnit3x::0EC227E9-D3DE-4FBA-AA42-5FEE68EEE22B::net9.0::day19+Example&lt;/TestId&gt;&#xD;
+    &lt;/TestAncestor&gt;&#xD;
+    &lt;Not&gt;&#xD;
+      &lt;Project Location="C:\Users\chukw\RiderProjects\AdventOfCode2024\day15" Presentation="&amp;lt;day15&amp;gt;" /&gt;&#xD;
+    &lt;/Not&gt;&#xD;
+  &lt;/And&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=5eab3d11_002Df791_002D4ac5_002D8869_002D02cd6cac0bb0/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Day17Tests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::7C015811-B36F-40CB-BAF4-32B46A9B29C0::net9.0::day17+Tests+Day17Tests&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String>
-	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=d106a5b4_002Daa23_002D4e9b_002D96fb_002D8442c0703bea/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Day16Tests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
-  &lt;TestAncestor&gt;&#xD;
-    &lt;TestId&gt;NUnit3x::2F0A635E-5D79-41AA-AC5A-602A71A711EB::net9.0::day16+Tests+Day16Tests&lt;/TestId&gt;&#xD;
-  &lt;/TestAncestor&gt;&#xD;
-&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
+	
+	</wpf:ResourceDictionary>
