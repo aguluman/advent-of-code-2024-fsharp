@@ -283,7 +283,7 @@ let part2 (maze: char[][]) =
 /// <param name="input">Raw input string</param>
 /// <returns>2D character array representing the maze</returns>
 let parse (input: string) =
-    input.Split("\n") |> Array.map (fun line -> line.TrimEnd().ToCharArray())
+    input.Split("\n") |> Array.map _.TrimEnd().ToCharArray()
 
 
 
