@@ -44,15 +44,15 @@ open FsUnit
 let part1 ((patterns, designs): string seq * string seq) =
     // Convert patterns to array for a faster lookup
     let patternsArray = patterns |> Seq.toArray
-    
+
     // Function to process each design
     let processDesign (design: string) =
         // Use memoization to avoid recalculating results
         let memo = Dictionary<int, bool>()
-        
+
         let rec canConstruct pos =
             // If we've reached the end of the design, we've found a valid construction
-            if pos = design.Length then 
+            if pos = design.Length then
                 true
             // If we've already computed this position, return the cached result
             elif memo.ContainsKey(pos) then
@@ -64,23 +64,26 @@ let part1 ((patterns, designs): string seq * string seq) =
                         false
                     else
                         let pattern = patternsArray[patternIndex]
-                        if pos + pattern.Length <= design.Length && 
-                           design.Substring(pos, pattern.Length) = pattern && 
-                           canConstruct (pos + pattern.Length) then
+
+                        if
+                            pos + pattern.Length <= design.Length
+                            && design.Substring(pos, pattern.Length) = pattern
+                            && canConstruct (pos + pattern.Length)
+                        then
                             true
                         else
                             tryPatterns (patternIndex + 1)
-                
+
                 // Try all patterns starting from the first one
                 let result = tryPatterns 0
-                
+
                 // Cache the result
                 memo[pos] <- result
                 result
-        
+
         // Start processing from the beginning of the design
         canConstruct 0
-        
+
     designs |> Seq.filter processDesign |> Seq.length
 
 
@@ -104,34 +107,48 @@ let part1 ((patterns, designs): string seq * string seq) =
 let part2 ((patterns, designs): string seq * string seq) =
     // Convert patterns to array for a faster lookup
     let patternsArray = patterns |> Seq.toArray
-    
+
     // Process each design
     let processDesign (design: string) =
         // Memoization table to avoid recalculating results
         let memo = Dictionary<int, int64>()
-        
+
         let rec countWays pos =
             // If we've reached the end of the design, we've found one valid way
             if pos = design.Length then
                 1L
-            // If we've already computed this position, return the cached result 
+            // If we've already computed this position, return the cached result
             elif memo.ContainsKey(pos) then
                 memo[pos]
             else
-                // Count ways for each pattern
-                let mutable ways = 0L
-                for pattern in patternsArray do
-                    if pos + pattern.Length <= design.Length && 
-                       design.Substring(pos, pattern.Length) = pattern then
-                        ways <- ways + countWays (pos + pattern.Length)
-                
+                // Helper function to process patterns in a tail-recursive way
+                let rec processPatterns patternIndex totalWays =
+                    if patternIndex >= patternsArray.Length then
+                        totalWays
+                    else
+                        let pattern = patternsArray[patternIndex]
+
+                        let newWays =
+                            if
+                                pos + pattern.Length <= design.Length
+                                && design.Substring(pos, pattern.Length) = pattern
+                            then
+                                totalWays + countWays (pos + pattern.Length)
+                            else
+                                totalWays
+
+                        processPatterns (patternIndex + 1) newWays
+
+                // Process all patterns starting with 0 ways
+                let ways = processPatterns 0 0L
+
                 // Cache the result
                 memo[pos] <- ways
                 ways
-        
+
         // Start counting from the beginning
         countWays 0
-    
+
     designs |> Seq.sumBy processDesign
 
 
@@ -146,7 +163,7 @@ let part2 ((patterns, designs): string seq * string seq) =
 /// - First line: comma-separated towel patterns (e.g., "r, wr, b, g")
 /// - Blank line separator
 /// - Remaining lines: one design per line (e.g., "brwrr")
-/// 
+///
 /// This parser handles different input formats, including cases where:
 /// - Input might have different line endings (Windows/Unix)
 /// - All patterns and designs might be on a single line
@@ -157,45 +174,41 @@ let part2 ((patterns, designs): string seq * string seq) =
 /// <returns>A tuple of (patterns sequence, designs sequence)</returns>
 let parse (input: string) =
     // Split input into lines and filter out empty lines
-    let lines = 
-        input.Split([|'\n'|], System.StringSplitOptions.RemoveEmptyEntries)
+    let lines =
+        input.Split([| '\n' |], System.StringSplitOptions.RemoveEmptyEntries)
         |> Array.map (fun s -> s.Trim())
         |> Array.filter (fun s -> s <> "")
-    
+
     // Pattern matching on the line array
     match lines with
     | [||] -> failwith "Invalid input: Empty input"
-    | lines when lines.Length < 2 -> 
+    | lines when lines.Length < 2 ->
         // Handle special case where all patterns and designs might be on one line
-        match lines[0].Split([|'\n'; '\r'|], System.StringSplitOptions.RemoveEmptyEntries) with
+        match lines[0].Split([| '\n'; '\r' |], System.StringSplitOptions.RemoveEmptyEntries) with
         | parts when parts.Length >= 2 ->
             // Parse patterns - split by comma and trim
-            let patterns = 
-                parts[0].Split([|','|], System.StringSplitOptions.RemoveEmptyEntries)
+            let patterns =
+                parts[0].Split([| ',' |], System.StringSplitOptions.RemoveEmptyEntries)
                 |> Array.map (fun s -> s.Trim())
                 |> Array.filter (fun s -> s <> "")
-            
+
             // Parse designs - take remaining parts
             let designs =
-                parts[1..]
-                |> Array.map (fun s -> s.Trim())
-                |> Array.filter (fun s -> s <> "")
-            
+                parts[1..] |> Array.map (fun s -> s.Trim()) |> Array.filter (fun s -> s <> "")
+
             patterns, designs
         | _ -> failwith "Invalid input format: Cannot separate patterns and designs"
     | lines ->
         // Parse patterns from the first line - split by comma and trim
-        let patterns = 
-            lines[0].Split([|','|], System.StringSplitOptions.RemoveEmptyEntries)
+        let patterns =
+            lines[0].Split([| ',' |], System.StringSplitOptions.RemoveEmptyEntries)
             |> Array.map (fun s -> s.Trim())
             |> Array.filter (fun s -> s <> "")
-        
+
         // Parse designs from remaining lines
-        let designs = 
-            lines[1..]
-            |> Array.map (fun s -> s.Trim())
-            |> Array.filter (fun s -> s <> "")
-        
+        let designs =
+            lines[1..] |> Array.map (fun s -> s.Trim()) |> Array.filter (fun s -> s <> "")
+
         patterns, designs
 
 
@@ -233,19 +246,19 @@ bbrgwb"
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     printfn $"Input length: %d{input.Length}"
-    
+
     let patterns, designs = parse input
     printfn $"Parsed %d{Seq.length patterns} patterns and %d{Seq.length designs} designs"
-    
+
     let stopwatch = Stopwatch.StartNew()
-    
+
     let part1Result = part1 (patterns, designs)
     printfn $"Part 1: %d{part1Result}"
-    
+
     let part2Result = part2 (patterns, designs)
     printfn $"Part 2: %d{part2Result}"
-    
+
     stopwatch.Stop()
     printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
-    
+
     0
