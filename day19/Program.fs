@@ -1,10 +1,46 @@
-﻿module day19
+﻿/// <summary>
+/// Day 19: Linen Layout - Towel Pattern Arrangement Challenge
+/// 
+/// This module solves the Advent of Code Day 19 challenge that involves arranging
+/// towel patterns to match specific designs at an onsen. Each towel has a specific
+/// pattern of colored stripes, and we need to determine which designs can be created
+/// by combining these patterns in sequence.
+/// </summary>
+///
+/// <remarks>
+/// The problem involves:
+/// - A set of available towel patterns (like "r", "wr", "gb")
+/// - A list of designs we want to create (like "brwrr", "bggr")
+/// - Task 1 - Determining which designs are possible to create by combining patterns
+/// - Task 2 - Counting how many different ways each design can be created
+/// 
+/// - See <https://adventofcode.com/2024/day/19> Problem Description
+/// </remarks>
+module day19
 
 open System.Diagnostics
 open System.Collections.Generic
 open NUnit.Framework
 open FsUnit
 
+
+
+
+
+/// <summary>
+/// Determines how many designs can be created using the available towel patterns.
+/// </summary>
+///
+/// <remarks>
+/// Uses dynamic programming with memoization to avoid recalculating results:
+/// - For each position in a design, try all possible patterns
+/// - If a pattern matches the current substring, recursively check the remainder
+/// - A design is possible if there's at least one way to construct it
+/// </remarks>
+///
+/// <param name="patterns">Available towel patterns</param>
+/// <param name="designs">Desired design specifications</param>
+/// <returns>Count of designs that can be created</returns>
 let part1 ((patterns, designs): string seq * string seq) =
     // Convert patterns to array for a faster lookup
     let patternsArray = patterns |> Seq.toArray
@@ -47,6 +83,24 @@ let part1 ((patterns, designs): string seq * string seq) =
         
     designs |> Seq.filter processDesign |> Seq.length
 
+
+
+
+
+/// <summary>
+/// Counts the total number of ways to create each design using the available patterns.
+/// </summary>
+///
+/// <remarks>
+/// Uses dynamic programming with memoization to count all possible ways:
+/// - For each position in a design, try all possible patterns
+/// - If a pattern matches, add the count of ways to construct the remainder
+/// - Sum these counts across all designs
+/// </remarks>
+///
+/// <param name="patterns">Available towel patterns</param>
+/// <param name="designs">Desired design specifications</param>
+/// <returns>Sum of the number of ways to create each design</returns>
 let part2 ((patterns, designs): string seq * string seq) =
     // Convert patterns to array for a faster lookup
     let patternsArray = patterns |> Seq.toArray
@@ -79,12 +133,27 @@ let part2 ((patterns, designs): string seq * string seq) =
         countWays 0
     
     designs |> Seq.sumBy processDesign
-    
+
+
+
 
 /// <summary>
 /// Parses the input string into patterns and designs
 /// </summary>
-/// <param name="input">Raw input string with patterns on first line and designs on subsequent lines</param>
+///
+/// <remarks>
+/// Expected input format:
+/// - First line: comma-separated towel patterns (e.g., "r, wr, b, g")
+/// - Blank line separator
+/// - Remaining lines: one design per line (e.g., "brwrr")
+/// 
+/// This parser handles different input formats, including cases where:
+/// - Input might have different line endings (Windows/Unix)
+/// - All patterns and designs might be on a single line
+/// - There might be extra whitespace that needs trimming
+/// </remarks>
+///
+/// <param name="input">Raw input string with patterns and designs</param>
 /// <returns>A tuple of (patterns sequence, designs sequence)</returns>
 let parse (input: string) =
     // Split input into lines and filter out empty lines
@@ -115,7 +184,7 @@ let parse (input: string) =
             patterns, designs
         | _ -> failwith "Invalid input format: Cannot separate patterns and designs"
     | lines ->
-        // Parse patterns from the first line-split by comma and trim
+        // Parse patterns from the first line - split by comma and trim
         let patterns = 
             lines[0].Split([|','|], System.StringSplitOptions.RemoveEmptyEntries)
             |> Array.map (fun s -> s.Trim())
@@ -129,7 +198,13 @@ let parse (input: string) =
         
         patterns, designs
 
+
+
+/// <summary>
+/// Example test cases and assertions for the Linen Layout solution
+/// </summary>
 module Example =
+    /// <summary>Example input from the challenge description</summary>
     let input =
         "r, wr, b, g, bwu, rb, gb, br
 
@@ -142,20 +217,25 @@ bwurrg
 brgr
 bbrgwb"
 
+    /// <summary>Tests that Part 1 correctly identifies 6 possible designs</summary>
     [<Test>]
     let testPart1 () = parse input |> part1 |> should equal 6
 
+    /// <summary>Tests that Part 2 correctly counts 16 total ways to create designs</summary>
     [<Test>]
     let testPart2 () =
         parse input |> part2 |> should equal 16L
 
+
+
+/// <summary>Main entry point for the program</summary>
 [<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
-    printfn $"Input length: %d{input.Length}" // Debug line
+    printfn $"Input length: %d{input.Length}"
     
     let patterns, designs = parse input
-    printfn $"Parsed %d{Seq.length patterns} patterns and %d{Seq.length designs} designs" // Debug line
+    printfn $"Parsed %d{Seq.length patterns} patterns and %d{Seq.length designs} designs"
     
     let stopwatch = Stopwatch.StartNew()
     
