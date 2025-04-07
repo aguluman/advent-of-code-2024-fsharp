@@ -48,7 +48,7 @@ open FsUnit
 ///
 /// <param name="button">A character representing a button on the numeric keypad</param>
 /// <returns>A tuple (row, column) representing the button's position</returns>
-let numPos button =
+let getDoorKeypadPosition button =
     match button with
     | '7' -> (0, 0)
     | '8' -> (0, 1)
@@ -61,7 +61,8 @@ let numPos button =
     | '3' -> (2, 2)
     | '0' -> (3, 1)
     | 'A' -> (3, 2)
-    | c -> failwithf $"%c{c} !?"
+    | c -> failwithf $"Invalid door keypad button: %c{c}"
+
 
 
 
@@ -89,14 +90,15 @@ let numPos button =
 /// <exception cref="System.Exception">
 /// Thrown if the specified <paramref name="button"/> is not a valid directional button.
 /// </exception>
-let dirPos button =
+let getDirectionalKeypadPosition button =
     match button with
     | '^' -> (0, 1)
     | 'A' -> (0, 2)
     | '<' -> (1, 0)
     | 'v' -> (1, 1)
     | '>' -> (1, 2)
-    | c -> failwithf $"%c{c} !?"
+    | c -> failwithf $"Invalid directional keypad button: %c{c}"
+
 
 
 
@@ -106,33 +108,42 @@ let dirPos button =
 ///
 /// <remarks>
 /// For most button pairs, there are two possible routes:
-/// 1. Moving vertically first, then horizontally (tate)
-/// 2. Moving horizontally first, then vertically (yoko)
+/// 1. Moving vertically first, then horizontally (verticalFirst)
+/// 2. Moving horizontally first, then vertically (horizontalFirst)
 ///
 /// Special cases exist for certain button combinations where only one route is logical.
 /// Each route ends with the 'A' button, representing the selection/confirmation.
 /// </remarks>
 ///
-/// <param name="num1">The starting button character</param>
-/// <param name="num2">The destination button character</param>
+/// <param name="sourceButton">The starting numeric button character</param>
+/// <param name="targetButton">The destination numeric button character</param>
 /// <returns>A list of possible routes, where each route is a list of buttons to press</returns>
-let numRoute num1 num2 =
-    let xi, xj = numPos num1
-    let yi, yj = numPos num2
-    let di = List.init (abs (xi - yi)) (fun _ -> if xi < yi then 'v' else '^')
-    let dj = List.init (abs (xj - yj)) (fun _ -> if xj < yj then '>' else '<')
-    let tate = di @ dj @ [ 'A' ] // Vertical first route
-    let yoko = dj @ di @ [ 'A' ] // Horizontal first route
+let calculateNumericButtonRoute sourceButton targetButton =
+    let sourceRow, sourceCol = getDoorKeypadPosition sourceButton
+    let targetRow, targetCol = getDoorKeypadPosition targetButton
+    
+    let verticalMoves = List.init (abs (sourceRow - targetRow)) (fun _ -> 
+        if sourceRow < targetRow then 'v' else '^')
+    
+    let horizontalMoves = List.init (abs (sourceCol - targetCol)) (fun _ -> 
+        if sourceCol < targetCol then '>' else '<')
+    
+    let verticalFirst = verticalMoves @ horizontalMoves @ ['A'] 
+    let horizontalFirst = horizontalMoves @ verticalMoves @ ['A']
 
     // Special cases for bottom row to left column transitions (and vice versa)
     // where one route is more logical than having two options
-    let bottom = [ '0'; 'A' ]
-    let left = [ '7'; '4'; '1' ]
+    let bottomRowButtons = ['0'; 'A']
+    let leftColButtons = ['7'; '4'; '1']
 
-    match num1, num2 with
-    | num1, num2 when List.contains (num1, num2) (List.allPairs bottom left) -> [ tate ]
-    | num1, num2 when List.contains (num1, num2) (List.allPairs left bottom) -> [ yoko ]
-    | _ -> List.distinct [ tate; yoko ]
+    match sourceButton, targetButton with
+    | src, tgt when List.contains (src, tgt) (List.allPairs bottomRowButtons leftColButtons) -> 
+        [verticalFirst]
+    | src, tgt when List.contains (src, tgt) (List.allPairs leftColButtons bottomRowButtons) -> 
+        [horizontalFirst]
+    | _ -> 
+        List.distinct [verticalFirst; horizontalFirst]
+
 
 
 
@@ -141,64 +152,82 @@ let numRoute num1 num2 =
 /// </summary>
 ///
 /// <remarks>
-/// Similar to numRoute, but for the directional keypad layout.
-/// For most button pairs, there are two possible routes, but special cases exist
-/// for certain combinations where only one route makes sense.
+/// For most button pairs, there are two possible routes:
+/// 1. Moving vertically first, then horizontally (verticalFirst)
+/// 2. Moving horizontally first, then vertically (horizontalFirst)
+///
+/// Special cases exist for certain button combinations where only one route is logical.
+/// Each route ends with the 'A' button, representing the selection/confirmation.
 /// </remarks>
 ///
-/// <param name="dir1">The starting directional button character</param>
-/// <param name="dir2">The destination directional button character</param>
+/// <param name="sourceButton">The starting directional button character</param>
+/// <param name="targetButton">The destination directional button character</param>
 /// <returns>A list of possible routes, where each route is a list of buttons to press</returns>
-let dirRoute dir1 dir2 =
-    let x1, xj = dirPos dir1
-    let y1, yj = dirPos dir2
-    let di = List.init (abs (x1 - y1)) (fun _ -> if x1 < y1 then 'v' else '^')
-    let dj = List.init (abs (xj - yj)) (fun _ -> if xj < yj then '>' else '<')
-    let tate = di @ dj @ [ 'A' ] // Vertical first route
-    let yoko = dj @ di @ [ 'A' ] // Horizontal first route
+let calculateDirectionalButtonRoute sourceButton targetButton =
+    let sourceRow, sourceCol = getDirectionalKeypadPosition sourceButton
+    let targetRow, targetCol = getDirectionalKeypadPosition targetButton
+    
+    let verticalMoves = List.init (abs (sourceRow - targetRow)) (fun _ -> 
+        if sourceRow < targetRow then 'v' else '^')
+    
+    let horizontalMoves = List.init (abs (sourceCol - targetCol)) (fun _ -> 
+        if sourceCol < targetCol then '>' else '<')
+    
+    let verticalFirst = verticalMoves @ horizontalMoves @ ['A'] 
+    let horizontalFirst = horizontalMoves @ verticalMoves @ ['A']
 
     // Special cases for top row to left column transitions (and vice versa)
-    let top = [ '^'; 'A' ]
-    let left = [ '<' ]
+    let topRowButtons = ['^'; 'A']
+    let leftColButtons = ['<']
 
-    match dir1, dir2 with
-    | dir1, dir2 when List.contains (dir1, dir2) (List.allPairs top left) -> [ tate ]
-    | dir1, dir2 when List.contains (dir1, dir2) (List.allPairs left top) -> [ yoko ]
-    | _ -> List.distinct [ tate; yoko ]
+    match sourceButton, targetButton with
+    | src, tgt when List.contains (src, tgt) (List.allPairs topRowButtons leftColButtons) -> 
+        [verticalFirst]
+    | src, tgt when List.contains (src, tgt) (List.allPairs leftColButtons topRowButtons) -> 
+        [horizontalFirst]
+    | _ -> 
+        List.distinct [verticalFirst; horizontalFirst]
 
 
 
 /// <summary>
-/// Recursively finds the minimum-length path between two buttons with a given recursion level.
+/// Recursively calculates the minimum cost path between two buttons with a specified recursion level.
 /// </summary>
 ///
 /// <remarks>
-/// This function implements a recursive path-finding algorithm:
-/// - At level 0, the path is simply the destination button
-/// - Otherwise, it finds all possible routes between the buttons and
-///   recursively calculates the minimum path for each step in each route
-///
-/// The keypad type (numeric or directional) is determined by examining the button characters.
+/// This function recursively calculates the optimal path between two buttons on a keypad,
+/// considering both numeric and directional keypads. The recursion level determines how deep
+/// the algorithm will analyze possible paths, with higher levels potentially finding more
+/// optimal routes at the cost of increased computation.
 /// </remarks>
 ///
-/// <param name="level">The recursion level, controlling the complexity of path finding</param>
-/// <param name="b1">The starting button character</param>
-/// <param name="b2">The destination button character</param>
-/// <returns>A list of buttons representing the minimum-cost path</returns>
-let rec minCostPath level b1 b2 =
-    if level = 0 then
-        [ b2 ]
+/// <param name="recursionLevel">The recursion depth for path calculation</param>
+/// <param name="sourceButton">The starting button character</param>
+/// <param name="targetButton">The destination button character</param>
+/// <returns>A list of button presses representing the minimum cost path</returns>
+let rec calculateMinimumCostPath recursionLevel sourceButton targetButton =
+    if recursionLevel = 0 then
+        [targetButton]
     else
         // Determine if we're using the numeric keypad based on button characters
-        let numKeypad = '0' <= b1 && b1 <= '9' || '0' <= b2 && b2 <= '9'
-        let route = if numKeypad then numRoute b1 b2 else dirRoute b1 b2
+        let isNumericKeypad = 
+            '0' <= sourceButton && sourceButton <= '9' || 
+            '0' <= targetButton && targetButton <= '9'
+            
+        let possibleRoutes = 
+            if isNumericKeypad then 
+                calculateNumericButtonRoute sourceButton targetButton
+            else 
+                calculateDirectionalButtonRoute sourceButton targetButton
 
-        route
+        possibleRoutes
         |> List.map (fun route ->
             'A' :: route // Prepend 'A' to represent the initial selection
             |> List.pairwise
-            |> List.collect (fun (x, y) -> minCostPath (level - 1) x y))
+            |> List.collect (fun (currentButton, nextButton) -> 
+                calculateMinimumCostPath (recursionLevel - 1) currentButton nextButton))
         |> List.minBy List.length
+
 
 
 
@@ -210,92 +239,106 @@ let memo = Dictionary<int * char * char, int64>()
 
 
 /// <summary>
-/// Recursively calculates the minimum cost to navigate from one button to another.
+/// Recursively calculates the minimum cost between two buttons with a specified recursion level.
 /// </summary>
 ///
 /// <remarks>
-/// Similar to minCostPath but returns the cost value rather than the path itself.
-/// Uses memoization to avoid recalculating results for the same inputs, which is
-/// critical for performance with higher recursion levels.
+/// This function calculates the minimum cost to navigate between two buttons on a keypad,
+/// using memoization to improve performance by caching previously calculated results.
+/// The recursion level determines how deep the algorithm will analyze possible paths.
 /// </remarks>
 ///
-/// <param name="level">The recursion level, controlling the complexity of path finding</param>
-/// <param name="b1">The starting button character</param>
-/// <param name="b2">The destination button character</param>
-/// <returns>The minimum cost (as a 64-bit integer) to navigate between the buttons</returns>
-let rec minCost level b1 b2 =
-    let key = (level, b1, b2)
+/// <param name="recursionLevel">The recursion depth for cost calculation</param>
+/// <param name="sourceButton">The starting button character</param>
+/// <param name="targetButton">The destination button character</param>
+/// <returns>The minimum cost (number of button presses) to navigate from source to target</returns>
+let rec calculateMinimumCost recursionLevel sourceButton targetButton =
+    let memoizationKey = (recursionLevel, sourceButton, targetButton)
 
-    match memo.TryGetValue(key) with
-    | true, value -> value
+    match memo.TryGetValue(memoizationKey) with
+    | true, cachedResult -> cachedResult
     | false, _ ->
-        let value =
-            if level = 0 then
+        let cost =
+            if recursionLevel = 0 then
                 1L // Base case: cost is 1 for directly pressing a button
             else
                 // Determine if we're using the numeric keypad based on button characters
-                let numKeypad = '0' <= b1 && b1 <= '9' || '0' <= b2 && b2 <= '9'
-                let route = if numKeypad then numRoute b1 b2 else dirRoute b1 b2
+                let isNumericKeypad = 
+                    '0' <= sourceButton && sourceButton <= '9' || 
+                    '0' <= targetButton && targetButton <= '9'
+                
+                let possibleRoutes = 
+                    if isNumericKeypad then 
+                        calculateNumericButtonRoute sourceButton targetButton
+                    else 
+                        calculateDirectionalButtonRoute sourceButton targetButton
 
-                route
+                possibleRoutes
                 |> List.map (fun route ->
                     'A' :: route // Prepend 'A' to represent the initial selection
                     |> List.pairwise
-                    |> List.sumBy (fun (x, y) -> minCost (level - 1) x y))
+                    |> List.sumBy (fun (currentButton, nextButton) -> 
+                        calculateMinimumCost (recursionLevel - 1) currentButton nextButton))
                 |> List.min
 
-        memo.Add(key, value)
-        value
+        memo.Add(memoizationKey, cost)
+        cost
+
 
 
 
 /// <summary>
-/// Solves Part 1 of the challenge using a recursion level of 3.
+/// Solves part 1 of the keypad navigation challenge.
 /// </summary>
 ///
 /// <remarks>
-/// For each code, calculates the minimum path length between consecutive buttons
-/// and multiplies the total cost by the numeric value of the code.
+/// This function calculates the total cost for navigating a sequence of button codes,
+/// using a recursion level of 3 for path calculation. Each code's cost is multiplied 
+/// by the numeric value of the code (excluding any trailing 'A' characters).
 /// </remarks>
 ///
-/// <param name="codes">Sequence of button codes to process</param>
-/// <returns>The total cost for all codes as defined by Part 1 rules</returns>
-let part1 (codes: string seq) =
-    codes
-    |> Seq.sumBy (fun code ->
-        let cost =
-            'A' :: List.ofSeq code // Start from the 'A' button
+/// <param name="keyCodes">A sequence of keypad button codes to navigate</param>
+/// <returns>The total weighted cost of navigating all codes</returns>
+let part1 (keyCodes: string seq) =
+    keyCodes
+    |> Seq.sumBy (fun keyCode ->
+        let navigationCost =
+            'A' :: List.ofSeq keyCode // Start from the 'A' button
             |> List.pairwise
-            |> List.collect (fun (x, y) -> minCostPath (2 + 1) x y) // Recursion level 3
+            |> List.collect (fun (currentButton, nextButton) -> 
+                calculateMinimumCostPath (2 + 1) currentButton nextButton) // Recursion level 3
             |> List.length
             |> int64
 
-        let num = code.TrimEnd 'A' |> int64
-        cost * num)
+        let codeValue = keyCode.TrimEnd 'A' |> int64
+        navigationCost * codeValue)
 
 
 
 /// <summary>
-/// Solves Part 2 of the challenge using a deeper recursion level of 26.
+/// Solves part 2 of the keypad navigation challenge.
 /// </summary>
 ///
 /// <remarks>
-/// Similar to Part 1 but with a much higher recursion level.
-/// Uses the memoized minCost function to make this computationally feasible.
+/// This function calculates the total cost for navigating a sequence of button codes,
+/// using a recursion level of 26 for cost calculation. Each code's cost is multiplied 
+/// by the numeric value of the code (excluding any trailing 'A' characters).
+/// This is a more computationally intensive version compared to part 1.
 /// </remarks>
 ///
-/// <param name="codes">Sequence of button codes to process</param>
-/// <returns>The total cost for all codes as defined by Part 2 rules</returns>
-let part2 (codes: string seq) =
-    codes
-    |> Seq.sumBy (fun code ->
-        let cost =
-            'A' :: List.ofSeq code // Start from the 'A' button
+/// <param name="keyCodes">A sequence of keypad button codes to navigate</param>
+/// <returns>The total weighted cost of navigating all codes</returns>
+let part2 (keyCodes: string seq) =
+    keyCodes
+    |> Seq.sumBy (fun keyCode ->
+        let navigationCost =
+            'A' :: List.ofSeq keyCode // Start from the 'A' button
             |> List.pairwise
-            |> List.sumBy (fun (x, y) -> minCost (25 + 1) x y) // Recursion level 26
+            |> List.sumBy (fun (currentButton, nextButton) -> 
+                calculateMinimumCost (25 + 1) currentButton nextButton) // Recursion level 26
 
-        let num = code.TrimEnd 'A' |> int64
-        cost * num)
+        let codeValue = keyCode.TrimEnd 'A' |> int64
+        navigationCost * codeValue)
 
 
 
