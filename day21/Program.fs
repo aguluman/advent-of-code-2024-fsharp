@@ -63,11 +63,11 @@ let numPos button =
 /// </summary>
 /// <remarks>
 /// The directional keypad layout looks like this:
-/// ^  A
-/// &lt;  v  &gt;
-///
-/// Accepted characters include '^', 'A', '&lt;', 'v', and '&gt;'.
-/// Any unrecognized character
+/// <code>
+///     ^  A
+///  &lt;  v  &gt;
+/// </code>
+/// Accepted characters include '^', 'A', '&lt;', 'v', and '&gt;'. Any unrecognized character
 /// will cause an exception to be thrown.
 /// </remarks>
 /// <param name="button">
