@@ -1,33 +1,27 @@
 ﻿/// <summary>
-/// Day 21: Keypad Navigation - Optimal Path Challenge
-/// </summary>
-/// <description>
 /// Solves Advent of Code Day 21 challenge about finding optimal paths between keypad buttons.
-/// The module calculates minimum-cost paths for navigating between buttons on numeric and directional keypads.
-/// </description>
-///
+/// </summary>
 /// <remarks>
-/// Problem details:
-/// - Input: A set of button sequences (codes) that need to be navigated
-/// - Part 1: Calculate the minimum cost to navigate each sequence with a recursion level of 3
-/// - Part 2: Calculate the minimum cost with a much deeper recursion level of 26
-///
-/// <summary>
-   /// The solution uses dynamic programming with memoization and path optimization techniques.
-   /// </summary>
-   /// <remarks>
-   /// Both numeric (characters '0'-'9') and directional keypads are supported.
-   /// Directional keypad includes the following characters:
-   /// <list type="bullet">
-   ///   <item><description>'^' (up arrow)</description></item>
-   ///   <item><description>'v' (down arrow)</description></item>
-   ///   <item><description>'&lt;' (left arrow)</description></item>
-   ///   <item><description>'&gt;' (right arrow)</description></item>
-   ///   <item><description>'A' (action button)</description></item>
-   /// </list>
-   /// </remarks>
+/// <para>The solution uses dynamic programming with memoization and path optimization techniques.</para>
+/// <para>Problem details:</para>
+/// <list type="bullet">
+///   <item><description><b>Input:</b> A set of button sequences (codes) that need to be navigated</description></item>
+///   <item><description><b>Part 1:</b> Calculate the minimum cost to navigate each sequence with a recursion level of 3</description></item>
+///   <item><description><b>Part 2:</b> Calculate the minimum cost with a much deeper recursion level of 26</description></item>
+/// </list>
+/// <para>Both numeric (characters '0'-'9') and directional keypads are supported.</para>
+/// <para>Directional keypad includes the following characters:</para>
+/// <list type="bullet">
+///   <item><description>'^' (up arrow)</description></item>
+///   <item><description>'v' (down arrow)</description></item>
+///   <item><description>'&lt;' (left arrow)</description></item>
+///   <item><description>'&gt;' (right arrow)</description></item>
+///   <item><description>'A' (action button)</description></item>
+/// </list>
 /// See: <see href="https://adventofcode.com/2024/day/21">Advent of Code 2024, Day 21</see>
 /// </remarks>
+
+
 module day21
 
 open System.Diagnostics
@@ -42,14 +36,14 @@ open FsUnit
 ///
 /// <remarks>
 /// The numeric keypad layout is as follows:
-/// 
+///
 /// <code>
 /// 7 8 9
 /// 4 5 6
 /// 1 2 3
 ///   0 A
 /// </code>
-/// 
+///
 /// </remarks>
 ///
 /// <param name="button">A character representing a button on the numeric keypad</param>
@@ -70,6 +64,7 @@ let numPos button =
     | c -> failwithf $"%c{c} !?"
 
 
+
 /// <summary>
 /// Retrieves the row and column coordinates for a specified directional keypad button.
 /// </summary>
@@ -80,7 +75,7 @@ let numPos button =
 ///     ^  A
 ///  &lt;  v  &gt;
 /// </code>
-/// 
+///
 /// Accepted characters include '^', 'A', '&lt;', 'v', and '&gt;'. Any unrecognized character
 /// will cause an exception to be thrown.
 /// </remarks>
@@ -102,6 +97,7 @@ let dirPos button =
     | 'v' -> (1, 1)
     | '>' -> (1, 2)
     | c -> failwithf $"%c{c} !?"
+
 
 
 /// <summary>
@@ -139,6 +135,7 @@ let numRoute num1 num2 =
     | _ -> List.distinct [ tate; yoko ]
 
 
+
 /// <summary>
 /// Calculates possible routes between two directional buttons on the keypad.
 /// </summary>
@@ -168,6 +165,7 @@ let dirRoute dir1 dir2 =
     | dir1, dir2 when List.contains (dir1, dir2) (List.allPairs top left) -> [ tate ]
     | dir1, dir2 when List.contains (dir1, dir2) (List.allPairs left top) -> [ yoko ]
     | _ -> List.distinct [ tate; yoko ]
+
 
 
 /// <summary>
@@ -203,10 +201,12 @@ let rec minCostPath level b1 b2 =
         |> List.minBy List.length
 
 
+
 /// <summary>
 /// Dictionary for memoizing results of the minCost function to avoid redundant calculations.
 /// </summary>
 let memo = Dictionary<int * char * char, int64>()
+
 
 
 /// <summary>
@@ -248,6 +248,7 @@ let rec minCost level b1 b2 =
         value
 
 
+
 /// <summary>
 /// Solves Part 1 of the challenge using a recursion level of 3.
 /// </summary>
@@ -273,6 +274,7 @@ let part1 (codes: string seq) =
         cost * num)
 
 
+
 /// <summary>
 /// Solves Part 2 of the challenge using a deeper recursion level of 26.
 /// </summary>
@@ -296,6 +298,7 @@ let part2 (codes: string seq) =
         cost * num)
 
 
+
 /// <summary>
 /// Parses the input string into a sequence of button codes.
 /// </summary>
@@ -307,6 +310,7 @@ let part2 (codes: string seq) =
 /// <param name="input">Raw input string</param>
 /// <returns>Array of button code strings</returns>
 let parse (input: string) = input.Split "\n" |> Array.map _.Trim()
+
 
 
 /// <summary>
@@ -325,6 +329,7 @@ module Example =
     [<Test>]
     let testPart1 () =
         parse input |> part1 |> should equal 126384L
+
 
 
 /// <summary>Main entry point for the program</summary>
