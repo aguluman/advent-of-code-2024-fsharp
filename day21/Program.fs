@@ -12,10 +12,20 @@
 /// - Part 1: Calculate the minimum cost to navigate each sequence with a recursion level of 3
 /// - Part 2: Calculate the minimum cost with a much deeper recursion level of 26
 ///
-/// The solution uses dynamic programming with memoization and path optimization techniques.
-/// Both numeric (&apos;0&apos;-&apos;9&apos;) and directional
-/// (&apos;^&apos;, &apos;v&apos;, &apos;&lt;&apos;, &apos;&gt;&apos;, &apos;A&apos;) keypads are supported.
-///
+/// <summary>
+   /// The solution uses dynamic programming with memoization and path optimization techniques.
+   /// </summary>
+   /// <remarks>
+   /// Both numeric (characters '0'-'9') and directional keypads are supported.
+   /// Directional keypad includes the following characters:
+   /// <list type="bullet">
+   ///   <item><description>'^' (up arrow)</description></item>
+   ///   <item><description>'v' (down arrow)</description></item>
+   ///   <item><description>'&lt;' (left arrow)</description></item>
+   ///   <item><description>'&gt;' (right arrow)</description></item>
+   ///   <item><description>'A' (action button)</description></item>
+   /// </list>
+   /// </remarks>
 /// See: <see href="https://adventofcode.com/2024/day/21">Advent of Code 2024, Day 21</see>
 /// </remarks>
 module day21
@@ -32,12 +42,14 @@ open FsUnit
 ///
 /// <remarks>
 /// The numeric keypad layout is as follows:
-/// ```
+/// 
+/// <code>
 /// 7 8 9
 /// 4 5 6
 /// 1 2 3
 ///   0 A
-/// ```
+/// </code>
+/// 
 /// </remarks>
 ///
 /// <param name="button">A character representing a button on the numeric keypad</param>
@@ -63,10 +75,12 @@ let numPos button =
 /// </summary>
 /// <remarks>
 /// The directional keypad layout looks like this:
+///
 /// <code>
 ///     ^  A
 ///  &lt;  v  &gt;
 /// </code>
+/// 
 /// Accepted characters include '^', 'A', '&lt;', 'v', and '&gt;'. Any unrecognized character
 /// will cause an exception to be thrown.
 /// </remarks>
