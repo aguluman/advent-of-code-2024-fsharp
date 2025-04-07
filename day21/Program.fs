@@ -13,11 +13,11 @@
 /// - Part 2: Calculate the minimum cost with a much deeper recursion level of 26
 ///
 /// The solution uses dynamic programming with memoization and path optimization techniques.
-/// Both numeric ('0'-'9') and directional ('^', 'v', '<', '>', 'A') keypads are supported.
+/// Both numeric (&apos;0&apos;-&apos;9&apos;) and directional
+/// (&apos;^&apos;, &apos;v&apos;, &apos;&lt;&apos;, &apos;&gt;&apos;, &apos;A&apos;) keypads are supported.
 ///
 /// See: <see href="https://adventofcode.com/2024/day/21">Advent of Code 2024, Day 21</see>
 /// </remarks>
-
 module day21
 
 open System.Diagnostics
@@ -63,16 +63,18 @@ let numPos button =
 /// </summary>
 /// <remarks>
 /// The directional keypad layout looks like this:
+/// ^  A
+/// &lt;  v  &gt;
 ///
-///     ^  A
-///  <  v  >
-///
-/// Accepted characters include '^', 'A', '<', 'v', and '>'. Any unrecognized character 
+/// Accepted characters include '^', 'A', '&lt;', 'v', and '&gt;'.
+/// Any unrecognized character
 /// will cause an exception to be thrown.
 /// </remarks>
-/// <param name="button">A single character representing the directional keypad button.</param>
+/// <param name="button">
+/// A single character representing the directional keypad button.
+/// </param>
 /// <returns>
-/// A tuple <c>(row, column)</c> indicating the button's position in a 2D grid, 
+/// A tuple (row, column) indicating the button's position in a 2D grid,
 /// where row 0, column 0 is the top-left corner.
 /// </returns>
 /// <exception cref="System.Exception">
