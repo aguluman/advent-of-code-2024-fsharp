@@ -29,6 +29,7 @@
 
 module day22
 
+open System.Collections.Generic
 open System.Diagnostics
 open NUnit.Framework
 open FsUnit
@@ -111,50 +112,78 @@ let part1 (initialSecrets: int64[]) =
 /// <param name="initialSecrets">Array of initial secret numbers from each buyer</param>
 /// <returns>Maximum number of bananas obtainable using the optimal price change pattern</returns>
 let part2 (initialSecrets: int64[]) =
-    // Create sequences of price digits (0-9) for each initial secret
-    let sequences =
-        initialSecrets
-        |> Array.Parallel.map (fun initial ->
-            let numbers = Array.zeroCreate 2001
-            numbers[0] <- initial % 10L
-
-            // Compute the sequence in place
-            let mutable current = initial
-
-            for i in 1..2000 do
-                current <- next current
-                numbers[i] <- current % 10L
-
-            numbers)
-
-    let changes =
-        sequences
-        |> Array.Parallel.map (fun seq -> Array.init 2000 (fun i -> seq[i + 1] - seq[i]))
-
-    // Use tuples instead of arrays for patterns (more efficient)
-    let mutable patternMap = Map.empty<int64 * int64 * int64 * int64, int64>
-
-    // Process each buyer's changes
-    for buyerIdx = 0 to changes.Length - 1 do
-        let mutable seenPatterns = Set.empty
-
-        // Find patterns
-        for i = 0 to changes[buyerIdx].Length - 4 do
-            let pattern =
-                changes[buyerIdx].[i], changes[buyerIdx].[i + 1], changes[buyerIdx].[i + 2], changes[buyerIdx].[i + 3]
-
+    // Use mutable Dictionary instead of immutable Map
+    let patternMap = Dictionary<int64 * int64 * int64 * int64, int64>()
+    
+    // Process each buyer sequentially
+    for buyerSecret in initialSecrets do
+        // Use HashSet for tracking seen patterns per buyer
+        let seenPatterns = HashSet<int64 * int64 * int64 * int64>()
+        
+        // Generate the first 5 prices on-the-fly
+        let mutable current = buyerSecret
+        let prices = Array.zeroCreate 5
+        
+        for i = 0 to 4 do
+            prices[i] <- current % 10L
+            current <- next current
+            
+        // Create a sliding window of 4 changes (5 prices)
+        let changes = Array.zeroCreate 4
+        for i = 0 to 3 do
+            changes[i] <- prices[i+1] - prices[i]
+            
+        // Initial pattern
+        let mutable pattern = (changes[0], changes[1], changes[2], changes[3])
+        
+        // Process first pattern
+        if not (seenPatterns.Contains pattern) then
+            seenPatterns.Add(pattern) |> ignore
+            
+            let value = 
+                match patternMap.TryGetValue(pattern) with
+                | true, existing -> existing + prices[4]
+                | false, _ -> prices[4]
+            
+            patternMap[pattern] <- value
+        
+        // Process remaining sequences (up to 2000)
+        for i = 5 to 2000 do
+            // Get next price
+            let price = current % 10L
+            current <- next current
+            
+            // Shift the window
+            for j = 0 to 2 do
+                changes[j] <- changes[j+1]
+            changes[3] <- price - prices[4]
+            
+            // Update prices
+            for j = 0 to 3 do
+                prices[j] <- prices[j+1]
+            prices[4] <- price
+            
+            // Calculate new pattern
+            pattern <- (changes[0], changes[1], changes[2], changes[3])
+            
+            // Update pattern map
             if not (seenPatterns.Contains pattern) then
-                let nextPrice = sequences[buyerIdx].[i + 4]
-
-                patternMap <-
-                    match Map.tryFind pattern patternMap with
-                    | None -> Map.add pattern nextPrice patternMap
-                    | Some existing -> Map.add pattern (existing + nextPrice) patternMap
-
-                seenPatterns <- Set.add pattern seenPatterns
-
-    // Find maximum sum
-    patternMap |> Map.values |> Seq.max
+                seenPatterns.Add(pattern) |> ignore
+                
+                let value = 
+                    match patternMap.TryGetValue(pattern) with
+                    | true, existing -> existing + price
+                    | false, _ -> price
+                
+                patternMap[pattern] <- value
+    
+    // Find maximum value
+    let mutable maxValue = 0L
+    for KeyValue(_, value) in patternMap do
+        if value > maxValue then
+            maxValue <- value
+            
+    maxValue
 
 
 
