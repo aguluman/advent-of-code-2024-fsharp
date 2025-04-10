@@ -134,7 +134,7 @@ let part2 (connections: Dictionary<string, HashSet<string>>) =
                     let candidate = candidates[index]
                     
                     // Early termination check
-                    if currentClique.Length + (candidates.Length - index) <= (!largestClique).Length then
+                    if currentClique.Length + (candidates.Length - index) <= largestClique.Value.Length then
                         // Skip remaining candidates as they can't improve our result
                         ()
                     else
