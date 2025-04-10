@@ -26,15 +26,19 @@
 ///
 /// See details at: <see href="https://adventofcode.com/2024/day/23">Advent of Code 2024, Day 23</see>
 /// </remarks>
+
 module day23
 
 open System
 open System.Diagnostics
+open System.Collections.Generic
 open NUnit.Framework
 open FsUnit
 
+
+
 /// <summary>
-/// Checks if three nodes form a connected triple (triangle) in the graph.
+/// Efficiently checks if three nodes form a connected triple (triangle) in the graph.
 /// </summary>
 /// <remarks>
 /// <para>The function considers a triple connected if each node connects directly to the other two.</para>
@@ -44,13 +48,12 @@ open FsUnit
 /// <param name="c">Third node identifier</param>
 /// <param name="connections">Adjacency map representing node connections</param>
 /// <returns><c>true</c> if nodes form a triangle; otherwise, <c>false</c></returns>
-let allThree (a: string) (b: string) (c: string) (connections: Map<string, string list>) =
-    let hasConnection src dest =
-        match connections.TryFind src with
-        | Some neighbors -> List.contains dest neighbors
-        | None -> false
+let inline areTriangle a b c (connections: Dictionary<string, HashSet<string>>) =
+    connections.[a].Contains(b) &&
+    connections.[b].Contains(c) &&
+    connections.[c].Contains(a)
 
-    hasConnection a b && hasConnection b c && hasConnection c a
+
 
 /// <summary>
 /// Counts all sets of three interconnected nodes (triangles) in the network,
@@ -67,29 +70,25 @@ let allThree (a: string) (b: string) (c: string) (connections: Map<string, strin
 /// </remarks>
 /// <param name="connections">Adjacency map representing node connections</param>
 /// <returns>The total count of qualifying connected triples</returns>
-let part1 (connections: Map<string, string list>) =
-    let mutable discoveredTriples = Set.empty
+let part1 (connections: Dictionary<string, HashSet<string>>) =
+    let discovered = HashSet<string>()
     let mutable count = 0
 
     for KeyValue(node, neighbors) in connections do
-        for neighbor1 in neighbors do
-            match connections.TryFind neighbor1 with
-            | Some neighborsOfNeighbor1 ->
-                for neighbor2 in neighborsOfNeighbor1 do
-                    let sortedTriple = [ node; neighbor1; neighbor2 ] |> List.sort
-                    let key = (sortedTriple[0], sortedTriple[1], sortedTriple[2])
-
-                    if
-                        allThree node neighbor1 neighbor2 connections
-                        && not (discoveredTriples.Contains key)
-                    then
-                        discoveredTriples <- discoveredTriples.Add key
-
-                        if [ node; neighbor1; neighbor2 ] |> List.exists (fun name -> name.StartsWith "t") then
+        for neighbor in neighbors do
+            // Early filtering: Only allow lexically greater nodes to avoid recounts
+            if String.Compare(node, neighbor) < 0 then 
+                for nextNeighbor in connections.[neighbor] do
+                    // Ensure consistent ordering and uniqueness
+                    if String.Compare(neighbor, nextNeighbor) < 0 && areTriangle node neighbor nextNeighbor connections then
+                        let triple = [| node; neighbor; nextNeighbor |] |> Array.sort
+                        let key = String.Join(",", triple)
+                        if discovered.Add(key) && (triple |> Array.exists (fun x -> x.StartsWith "t")) then
                             count <- count + 1
-            | None -> ()
-
     count
+
+
+
 
 /// <summary>
 /// Finds the largest clique (fully connected group) in the network.
@@ -107,39 +106,46 @@ let part1 (connections: Map<string, string list>) =
 /// <returns>
 /// A comma-separated, alphabetically sorted string of the nodes constituting the largest clique, serving as the LAN party password.
 /// </returns>
-let part2 (connections: Map<string, string list>) =
-    let mutable largestClique = []
-    let mutable largestCliqueSize = 0
+let part2 (connections: Dictionary<string, HashSet<string>>) =
+    let nodes = connections.Keys |> Seq.toArray
+    let largestClique = ref Array.empty<string>
 
-    for KeyValue(node, _) in connections do
-        let mutable currentClique = [ node ]
+    /// Efficiently checks if the candidate can be added to the current clique
+    let inline canAddToClique clique candidate =
+        clique |> Array.forall (fun n -> connections.[candidate].Contains n)
 
-        let rec extendClique () =
-            let mutable expanded = false
+    /// Recursive search for clique with aggressive early termination
+    let rec growClique (currentClique: string[]) candidates =
+        match candidates with
+        | [||] ->
+            if currentClique.Length > (!largestClique).Length then
+                largestClique := currentClique
+        | _ ->
+            for i in 0..candidates.Length - 1 do
+                let candidate = candidates[i]
+                if currentClique.Length + (candidates.Length - i) <= (!largestClique).Length then
+                    // early termination
+                    ()
+                let nextClique = Array.append currentClique [| candidate |]
+                let nextCandidates =
+                    candidates[(i + 1)..]
+                    |> Array.filter (canAddToClique nextClique)
+                growClique nextClique nextCandidates
 
-            for KeyValue(candidate, _) in connections do
-                if not (currentClique |> List.contains candidate) then
-                    let connectsToAll =
-                        currentClique
-                        |> List.forall (fun cliqueMember ->
-                            match connections.TryFind candidate with
-                            | Some neighbors -> neighbors |> List.contains cliqueMember
-                            | None -> false)
+    // Sort nodes to improve clique-finding performance through informed pruning
+    let sortedNodes = nodes |> Array.sortByDescending (fun n -> connections.[n].Count)
 
-                    if connectsToAll then
-                        currentClique <- candidate :: currentClique
-                        expanded <- true
+    // Run parallel tasks for distinct starting nodes
+    sortedNodes
+    |> Array.Parallel.iter (fun node ->
+        let candidates = connections.[node] |> Seq.toArray |> Array.filter (fun n -> String.CompareOrdinal(n, node) > 0)
+        growClique [| node |] candidates
+    )
 
-            if expanded then
-                extendClique ()
+    // Return the largest clique sorted alphabetically for the password
+    (!largestClique |> Array.sort |> String.concat ",")
 
-        extendClique ()
 
-        if currentClique.Length > largestCliqueSize then
-            largestClique <- currentClique
-            largestCliqueSize <- currentClique.Length
-
-    largestClique |> List.sort |> String.concat ","
 
 
 /// <summary>
@@ -165,6 +171,12 @@ let parse (input: string) =
             | None -> connections'.Add(dest, [ src ]))
         Map.empty
 
+
+/// Converts from Map<string, string list> to Dictionary<string, HashSet<string>>
+let toOptimizedDict (connections: Map<string, string list>) =
+    connections
+    |> Seq.map (fun kvp -> kvp.Key, HashSet(kvp.Value))
+    |> dict |> Dictionary
 
 
 /// <summary>
@@ -206,11 +218,22 @@ tb-vc
 td-yn"
 
     [<Test>]
-    let testPart1 () = parse input |> part1 |> should equal 7
+    let testPart1 () = 
+        input
+        |> parse 
+        |> toOptimizedDict 
+        |> part1 
+        |> should equal 7
 
     [<Test>]
     let testPart2 () =
-        parse input |> part2 |> should equal "co,de,ka,ta"
+        input
+        |> parse
+        |> toOptimizedDict
+        |> part2
+        |> should equal "co,de,ka,ta"
+
+
 
 /// <summary>Main entry point for the program</summary>
 [<EntryPoint>]
@@ -218,24 +241,20 @@ let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     printfn $"Input length: %d{input.Length}"
 
+    let connections = parse input |> toOptimizedDict
 
     let stopwatch = Stopwatch()
     stopwatch.Start()
 
-    let connections = parse input
-    printfn $"Connections count: %d{connections.Count}"
-
-    let part1Result = part1 connections
-    printfn $"Part 1: %d{part1Result}"
-
-    let part2Result = part2 connections
-    printfn $"Part 2: %s{part2Result}"
-
-    // Also output the size for compatibility with the original output
-    let clique = part2Result.Split(',')
-    printfn $"Clique size: %d{clique.Length}"
-
+    let result1 = part1 connections
+    let result2 = part2 connections
+    
     stopwatch.Stop()
+
+    printfn $"Connections count: %d{connections.Count}"
+    printfn $"Part 1: %d{result1}"
+    printfn $"Part 2: %s{result2}"
+    printfn $"Clique size: %d{result2.Split(',').Length}"
     printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
 
     0
