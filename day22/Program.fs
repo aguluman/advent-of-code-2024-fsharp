@@ -32,49 +32,49 @@ let part2 (initialSecrets: int64[]) =
     printfn $"Precomputing secrets for %d{initialSecrets.Length} buyers..."
         
     // Create sequences of price digits (0-9) for each initial secret
-    let sequences = 
+    let sequences =
         initialSecrets 
         |> Array.Parallel.map (fun initial ->
-            Array.init 2001 (fun i -> 
-                if i = 0 then initial % 10L
-                else nthNext i initial % 10L))
-    
-    // Calculate price changes between consecutive numbers
+            let numbers = Array.zeroCreate 2001
+            numbers.[0] <- initial % 10L
+            
+            // Compute sequence in place
+            let mutable current = initial
+            for i in 1..2000 do
+                current <- next current
+                numbers.[i] <- current % 10L
+            numbers)
+            
     let changes =
         sequences
         |> Array.Parallel.map (fun seq ->
-            seq
-            |> Array.windowed 2
-            |> Array.map (fun window -> window.[1] - window.[0]))
+            Array.init 2000 (fun i -> seq.[i + 1] - seq.[i]))
     
-    // Find patterns of 4 consecutive changes and their following prices
-    let mutable fourPatternMap = Map.empty
+    // Use tuples instead of arrays for patterns (more efficient)
+    let mutable patternMap = Map.empty<int64*int64*int64*int64, int64>
     
     // Process each buyer's changes
     for buyerIdx = 0 to changes.Length - 1 do
-        let mutable addedPatterns = Set.empty
+        let mutable seenPatterns = Set.empty
         
-        // Look for patterns starting at each position
-        for startIdx = 0 to changes.[buyerIdx].Length - 4 do
-            let pattern = [|
-                changes.[buyerIdx].[startIdx]
-                changes.[buyerIdx].[startIdx + 1]
-                changes.[buyerIdx].[startIdx + 2] 
-                changes.[buyerIdx].[startIdx + 3]
-            |]
-            
-            let nextPrice = sequences.[buyerIdx].[startIdx + 4]
-            
-            // Add or update pattern in map
-            if not (addedPatterns.Contains pattern) then
-                fourPatternMap <- 
-                    match Map.tryFind pattern fourPatternMap with
-                    | None -> Map.add pattern nextPrice fourPatternMap
-                    | Some existing -> Map.add pattern (existing + nextPrice) fourPatternMap
-                addedPatterns <- Set.add pattern addedPatterns
+        // Find patterns
+        for i = 0 to changes.[buyerIdx].Length - 4 do
+            let pattern = 
+                changes.[buyerIdx].[i],
+                changes.[buyerIdx].[i + 1],
+                changes.[buyerIdx].[i + 2],
+                changes.[buyerIdx].[i + 3]
+                
+            if not (seenPatterns.Contains pattern) then
+                let nextPrice = sequences.[buyerIdx].[i + 4]
+                patternMap <- 
+                    match Map.tryFind pattern patternMap with
+                    | None -> Map.add pattern nextPrice patternMap
+                    | Some existing -> Map.add pattern (existing + nextPrice) patternMap
+                seenPatterns <- Set.add pattern seenPatterns
     
-    // Find maximum price sum for any pattern
-    fourPatternMap
+    // Find maximum sum
+    patternMap
     |> Map.values
     |> Seq.max
 
