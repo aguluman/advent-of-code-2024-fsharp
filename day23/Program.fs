@@ -119,7 +119,7 @@ let part2 (connections: Dictionary<string, HashSet<string>>) =
     let inline canAddToClique clique candidate =
         clique |> Array.forall (fun n -> connections[candidate].Contains n)
 
-        /// Recursive search for clique with aggressive early termination
+    /// Recursive search for clique with aggressive early termination
     let rec growClique (currentClique: string[]) candidates =
         match candidates with
         | [||] ->
@@ -132,22 +132,23 @@ let part2 (connections: Dictionary<string, HashSet<string>>) =
                     () // Done processing all candidates
                 else
                     let candidate = candidates[index]
-                    
+
                     // Early termination check
                     if currentClique.Length + (candidates.Length - index) <= largestClique.Value.Length then
                         // Skip remaining candidates as they can't improve our result
                         ()
                     else
                         let nextClique = Array.append currentClique [| candidate |]
+
                         let nextCandidates =
-                            candidates[(index + 1)..] |> Array.filter (canAddToClique nextClique)
-                        
+                            candidates[(index + 1) ..] |> Array.filter (canAddToClique nextClique)
+
                         // Process this branch
                         growClique nextClique nextCandidates
-                        
+
                         // Continue with the next candidate
                         processCandidates (index + 1)
-            
+
             // Start processing from the first candidate
             processCandidates 0
 
