@@ -41,7 +41,7 @@ open FsUnit
 /// Efficiently checks if three nodes form a connected triple (triangle) in the graph.
 /// </summary>
 /// <remarks>
-/// <para>The function considers a triple connected if each node connects directly to the other two.</para>
+/// <para>The function is considered a triple/triangle  if each node connects directly to the other two.</para>
 /// </remarks>
 /// <param name="a">First node identifier</param>
 /// <param name="b">Second node identifier</param>
