@@ -29,6 +29,7 @@
 
 module day22
 
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open NUnit.Framework
@@ -110,29 +111,30 @@ let part1 (initialSecrets: int64[]) =
 /// The function uses parallel processing for generating sequences and changes.</para>
 /// </remarks>
 /// <param name="initialSecrets">Array of initial secret numbers from each buyer</param>
-/// <returns>Maximum number of bananas obtainable using the optimal price change pattern</returns>
+/// <returns>Maximum number of bananas obtainable using the optimal price change pattern</returns>    
 let part2 (initialSecrets: int64[]) =
-    // Use mutable Dictionary instead of immutable Map
-    let patternMap = Dictionary<int64 * int64 * int64 * int64, int64>()
+    // Use a concurrent dictionary for thread-safety in parallel processing
+    let patternMap = ConcurrentDictionary<int64 * int64 * int64 * int64, int64>()
     
-    // Process each buyer sequentially
-    for buyerSecret in initialSecrets do
+    // Process buyers in parallel
+    initialSecrets
+    |> Array.Parallel.iter (fun buyerSecret ->
         // Use HashSet for tracking seen patterns per buyer
         let seenPatterns = HashSet<int64 * int64 * int64 * int64>()
         
-        // Generate the first 5 prices on-the-fly
+        // Generate the first 5 prices
         let mutable current = buyerSecret
         let prices = Array.zeroCreate 5
         
         for i = 0 to 4 do
             prices[i] <- current % 10L
             current <- next current
-            
+        
         // Create a sliding window of 4 changes (5 prices)
         let changes = Array.zeroCreate 4
         for i = 0 to 3 do
             changes[i] <- prices[i+1] - prices[i]
-            
+        
         // Initial pattern
         let mutable pattern = (changes[0], changes[1], changes[2], changes[3])
         
@@ -140,12 +142,11 @@ let part2 (initialSecrets: int64[]) =
         if not (seenPatterns.Contains pattern) then
             seenPatterns.Add(pattern) |> ignore
             
-            let value = 
-                match patternMap.TryGetValue(pattern) with
-                | true, existing -> existing + prices[4]
-                | false, _ -> prices[4]
-            
-            patternMap[pattern] <- value
+            patternMap.AddOrUpdate(
+                pattern,
+                (fun _ -> prices[4]),
+                (fun _ oldValue -> oldValue + prices[4])
+            ) |> ignore
         
         // Process remaining sequences (up to 2000)
         for i = 5 to 2000 do
@@ -170,20 +171,15 @@ let part2 (initialSecrets: int64[]) =
             if not (seenPatterns.Contains pattern) then
                 seenPatterns.Add(pattern) |> ignore
                 
-                let value = 
-                    match patternMap.TryGetValue(pattern) with
-                    | true, existing -> existing + price
-                    | false, _ -> price
-                
-                patternMap[pattern] <- value
+                patternMap.AddOrUpdate(
+                    pattern,
+                    (fun _ -> price),
+                    (fun _ oldValue -> oldValue + price)
+                ) |> ignore
+    )
     
     // Find maximum value
-    let mutable maxValue = 0L
-    for KeyValue(_, value) in patternMap do
-        if value > maxValue then
-            maxValue <- value
-            
-    maxValue
+    patternMap.Values |> Seq.max
 
 
 
