@@ -54,7 +54,26 @@ let next secret =
     secret |> mix (secret * 2048L) |> prune
 
 
-
+/// <summary>
+/// Calculates the sum of the 2000th secret number for each buyer in the Monkey Exchange Market.
+/// </summary>
+/// <remarks>
+/// <para>For each buyer's initial secret number, the function:</para>
+/// <list type="number">
+///   <item><description>Generates 2000 new secret numbers using the monkey's algorithm</description></item>
+///   <item><description>Takes the 2000th number in the sequence</description></item>
+///   <item><description>Sums these numbers across all buyers</description></item>
+/// </list>
+///
+/// <para>The secret number evolution follows these steps:</para>
+/// <list type="bullet">
+///   <item><description>Multiply by 64, mix, and prune</description></item>
+///   <item><description>Divide by 32, mix, and prune</description></item>
+///   <item><description>Multiply by 2048, mix, and prune</description></item>
+/// </list>
+/// </remarks>
+/// <param name="initialSecrets">Array of initial secret numbers from each buyer</param>
+/// <returns>Sum of the 2000th secret number from each buyer's sequence</returns>
 let part1 (initialSecrets: int64[]) =
     // Pre-allocate the array with zeros - more efficient than copying
     let mutable sum = 0L
@@ -71,6 +90,26 @@ let part1 (initialSecrets: int64[]) =
     sum
 
 
+
+/// <summary>
+/// Finds the optimal price pattern in the Monkey Exchange Market to maximize banana trades.
+/// </summary>
+/// <remarks>
+/// <para>Algorithm steps:</para>
+/// <list type="number">
+///   <item><description>Generate price sequences (0-9) for each buyer's next 2000 secret numbers</description></item>
+///   <item><description>Calculate price changes between consecutive numbers</description></item>
+///   <item><description>Find patterns of 4 consecutive price changes</description></item>
+///   <item><description>Track total banana prices for each unique pattern</description></item>
+///   <item><description>Return the maximum possible banana price achievable</description></item>
+/// </list>
+///
+/// <para>Price patterns are tracked as 4-tuples of consecutive price changes.
+/// Each change represents the difference between consecutive prices.
+/// The function uses parallel processing for generating sequences and changes.</para>
+/// </remarks>
+/// <param name="initialSecrets">Array of initial secret numbers from each buyer</param>
+/// <returns>Maximum number of bananas obtainable using the optimal price change pattern</returns>
 let part2 (initialSecrets: int64[]) =
     // Create sequences of price digits (0-9) for each initial secret
     let sequences =
@@ -102,10 +141,7 @@ let part2 (initialSecrets: int64[]) =
         // Find patterns
         for i = 0 to changes[buyerIdx].Length - 4 do
             let pattern =
-                changes[buyerIdx].[i],
-                changes[buyerIdx].[i + 1],
-                changes[buyerIdx].[i + 2],
-                changes[buyerIdx].[i + 3]
+                changes[buyerIdx].[i], changes[buyerIdx].[i + 1], changes[buyerIdx].[i + 2], changes[buyerIdx].[i + 3]
 
             if not (seenPatterns.Contains pattern) then
                 let nextPrice = sequences[buyerIdx].[i + 4]
@@ -125,7 +161,9 @@ let part2 (initialSecrets: int64[]) =
 let parse (input: string) =
     input.Split("\n") |> Array.map (fun line -> line.TrimEnd() |> int64)
 
-
+/// <summary>
+/// Example test cases and assertions for the Monkey Market solution
+/// </summary>
 module Example =
     let input1 =
         "1
@@ -139,10 +177,44 @@ module Example =
 3
 2024"
 
+    /// <summary>
+    /// Tests the solution for part 1 of the Monkey Market challenge.
+    /// </summary>
+    /// <remarks>
+    /// <para>Verifies that our algorithm correctly calculates the sum of the 2000th 
+    /// secret number for each buyer in the example data.</para>
+    /// 
+    /// <para>The expected result is 37327623, representing the combined secrets from
+    /// the buyers with initial secrets of:</para>
+    /// <list type="bullet">
+    ///   <item><description>1</description></item>
+    ///   <item><description>10</description></item>
+    ///   <item><description>100</description></item>
+    ///   <item><description>2024</description></item>
+    /// </list>
+    /// </remarks>
     [<Test>]
     let testPart1 () =
         parse input1 |> part1 |> should equal 37327623L
-
+    
+    /// <summary>
+    /// Tests the solution for part 2 of the Monkey Market challenge.
+    /// </summary>
+    /// <remarks>
+    /// <para>Validates that our algorithm correctly identifies the optimal
+    /// sequence of four price changes that maximizes the total number
+    /// of bananas received from all buyers.</para>
+    /// 
+    /// <para>The expected result is 23, which represents the sum of bananas
+    /// obtained by following the pattern <b>-2,1,-1,3</b> when selling
+    /// hiding spots to buyers with initial secrets of:</para>
+    /// <list type="bullet">
+    ///   <item><description>1</description></item>
+    ///   <item><description>2</description></item>
+    ///   <item><description>3</description></item>
+    ///   <item><description>2024</description></item>
+    /// </list>
+    /// </remarks>
     [<Test>]
     let testPart2 () =
         parse input2 |> part2 |> should equal 23L
