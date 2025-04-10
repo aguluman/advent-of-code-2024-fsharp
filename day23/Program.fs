@@ -49,9 +49,9 @@ open FsUnit
 /// <param name="connections">Adjacency map representing node connections</param>
 /// <returns><c>true</c> if nodes form a triangle; otherwise, <c>false</c></returns>
 let inline areTriangle a b c (connections: Dictionary<string, HashSet<string>>) =
-    connections.[a].Contains(b) &&
-    connections.[b].Contains(c) &&
-    connections.[c].Contains(a)
+    connections[a].Contains b
+    && connections[b].Contains c
+    && connections[c].Contains a
 
 
 
@@ -77,14 +77,19 @@ let part1 (connections: Dictionary<string, HashSet<string>>) =
     for KeyValue(node, neighbors) in connections do
         for neighbor in neighbors do
             // Early filtering: Only allow lexically greater nodes to avoid recounts
-            if String.Compare(node, neighbor) < 0 then 
-                for nextNeighbor in connections.[neighbor] do
+            if String.Compare(node, neighbor) < 0 then
+                for nextNeighbor in connections[neighbor] do
                     // Ensure consistent ordering and uniqueness
-                    if String.Compare(neighbor, nextNeighbor) < 0 && areTriangle node neighbor nextNeighbor connections then
+                    if
+                        String.Compare(neighbor, nextNeighbor) < 0
+                        && areTriangle node neighbor nextNeighbor connections
+                    then
                         let triple = [| node; neighbor; nextNeighbor |] |> Array.sort
                         let key = String.Join(",", triple)
-                        if discovered.Add(key) && (triple |> Array.exists (fun x -> x.StartsWith "t")) then
+
+                        if discovered.Add key && triple |> Array.exists (fun x -> x.StartsWith "t") then
                             count <- count + 1
+
     count
 
 
@@ -112,38 +117,55 @@ let part2 (connections: Dictionary<string, HashSet<string>>) =
 
     /// Efficiently checks if the candidate can be added to the current clique
     let inline canAddToClique clique candidate =
-        clique |> Array.forall (fun n -> connections.[candidate].Contains n)
+        clique |> Array.forall (fun n -> connections[candidate].Contains n)
 
-    /// Recursive search for clique with aggressive early termination
+        /// Recursive search for clique with aggressive early termination
     let rec growClique (currentClique: string[]) candidates =
         match candidates with
         | [||] ->
-            if currentClique.Length > (!largestClique).Length then
-                largestClique := currentClique
+            if currentClique.Length > largestClique.Value.Length then
+                largestClique.Value <- currentClique
         | _ ->
-            for i in 0..candidates.Length - 1 do
-                let candidate = candidates[i]
-                if currentClique.Length + (candidates.Length - i) <= (!largestClique).Length then
-                    // early termination
-                    ()
-                let nextClique = Array.append currentClique [| candidate |]
-                let nextCandidates =
-                    candidates[(i + 1)..]
-                    |> Array.filter (canAddToClique nextClique)
-                growClique nextClique nextCandidates
+            // Helper function to process candidates one by one in a tail-recursive manner
+            let rec processCandidates index =
+                if index >= candidates.Length then
+                    () // Done processing all candidates
+                else
+                    let candidate = candidates[index]
+                    
+                    // Early termination check
+                    if currentClique.Length + (candidates.Length - index) <= (!largestClique).Length then
+                        // Skip remaining candidates as they can't improve our result
+                        ()
+                    else
+                        let nextClique = Array.append currentClique [| candidate |]
+                        let nextCandidates =
+                            candidates[(index + 1)..] |> Array.filter (canAddToClique nextClique)
+                        
+                        // Process this branch
+                        growClique nextClique nextCandidates
+                        
+                        // Continue with the next candidate
+                        processCandidates (index + 1)
+            
+            // Start processing from the first candidate
+            processCandidates 0
 
     // Sort nodes to improve clique-finding performance through informed pruning
-    let sortedNodes = nodes |> Array.sortByDescending (fun n -> connections.[n].Count)
+    let sortedNodes = nodes |> Array.sortByDescending (fun n -> connections[n].Count)
 
     // Run parallel tasks for distinct starting nodes
     sortedNodes
     |> Array.Parallel.iter (fun node ->
-        let candidates = connections.[node] |> Seq.toArray |> Array.filter (fun n -> String.CompareOrdinal(n, node) > 0)
-        growClique [| node |] candidates
-    )
+        let candidates =
+            connections[node]
+            |> Seq.toArray
+            |> Array.filter (fun n -> String.CompareOrdinal(n, node) > 0)
+
+        growClique [| node |] candidates)
 
     // Return the largest clique sorted alphabetically for the password
-    (!largestClique |> Array.sort |> String.concat ",")
+    largestClique.Value |> Array.sort |> String.concat ","
 
 
 
@@ -175,8 +197,9 @@ let parse (input: string) =
 /// Converts from Map<string, string list> to Dictionary<string, HashSet<string>>
 let toOptimizedDict (connections: Map<string, string list>) =
     connections
-    |> Seq.map (fun kvp -> kvp.Key, HashSet(kvp.Value))
-    |> dict |> Dictionary
+    |> Seq.map (fun kvp -> kvp.Key, HashSet kvp.Value)
+    |> dict
+    |> Dictionary
 
 
 /// <summary>
@@ -218,20 +241,12 @@ tb-vc
 td-yn"
 
     [<Test>]
-    let testPart1 () = 
-        input
-        |> parse 
-        |> toOptimizedDict 
-        |> part1 
-        |> should equal 7
+    let testPart1 () =
+        input |> parse |> toOptimizedDict |> part1 |> should equal 7
 
     [<Test>]
     let testPart2 () =
-        input
-        |> parse
-        |> toOptimizedDict
-        |> part2
-        |> should equal "co,de,ka,ta"
+        input |> parse |> toOptimizedDict |> part2 |> should equal "co,de,ka,ta"
 
 
 
@@ -248,7 +263,7 @@ let main _ =
 
     let result1 = part1 connections
     let result2 = part2 connections
-    
+
     stopwatch.Stop()
 
     printfn $"Connections count: %d{connections.Count}"
