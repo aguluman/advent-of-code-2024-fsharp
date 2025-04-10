@@ -1,18 +1,30 @@
 ﻿/// <summary>
-/// Day 23: Triples and Cliques - Graph Connection Analysis
+/// Day 23: LAN Party - Graph Connection and Clique Analysis
 /// </summary>
 /// <description>
-/// Solves Advent of Code Day 23 challenge about analyzing connections in a graph.
-/// The module identifies connected triples and finds the largest complete subgraph (clique).
+/// Solves the Advent of Code Day 23 challenges focused on analyzing network connections to locate a LAN party.
+/// This module performs two main tasks:
+/// <list type="bullet">
+///   <item><description><b>Part 1:</b> Count all connected triples (sets of 3 nodes) with at least one node name starting with 't'</description></item>
+///   <item><description><b>Part 2:</b> Find the largest clique, which is the biggest subset of nodes where each node connects directly with every other node</description></item>
+/// </list>
 /// </description>
-///
 /// <remarks>
-/// Problem details:
-/// - Input: A list of bidirectional connections between nodes
-/// - Part 1: Count connected triples where at least one node starts with 't'
-/// - Part 2: Find the size of the largest clique in the graph
+/// <para>Problem details:</para>
+/// <list type="bullet">
+///   <item><description><b>Input:</b> Network connections represented as bidirectional strings</description></item>
+///   <item><description><b>Output (Part 1):</b> Number of triple-connected sets containing at least one node starting with 't'</description></item>
+///   <item><description><b>Output (Part 2):</b> Comma-separated node names sorted alphabetically forming the largest clique (password)</description></item>
+/// </list>
 ///
-/// See: <see href="https://adventofcode.com/2024/day/23">Advent of Code 2024, Day 23</see>
+/// <para>Used concepts:</para>
+/// <list type="bullet">
+///   <item><description>Graph representation as adjacency maps</description></item>
+///   <item><description>Search algorithms to identify triangles and larger cliques</description></item>
+///   <item><description>String and collection manipulations for efficiency and clarity</description></item>
+/// </list>
+///
+/// See details at: <see href="https://adventofcode.com/2024/day/23">Advent of Code 2024, Day 23</see>
 /// </remarks>
 module day23
 
@@ -22,91 +34,112 @@ open NUnit.Framework
 open FsUnit
 
 /// <summary>
-/// Checks if three nodes form a connected triple (a complete subgraph of size 3).
+/// Checks if three nodes form a connected triple (triangle) in the graph.
 /// </summary>
-/// <param name="a">First node</param>
-/// <param name="b">Second node</param>
-/// <param name="c">Third node</param>
-/// <param name="connections">Map of nodes to their connected neighbors</param>
-/// <returns>True if the three nodes form a connected triple, false otherwise</returns>
+/// <remarks>
+/// <para>The function considers a triple connected if each node connects directly to the other two.</para>
+/// </remarks>
+/// <param name="a">First node identifier</param>
+/// <param name="b">Second node identifier</param>
+/// <param name="c">Third node identifier</param>
+/// <param name="connections">Adjacency map representing node connections</param>
+/// <returns><c>true</c> if nodes form a triangle; otherwise, <c>false</c></returns>
 let allThree (a: string) (b: string) (c: string) (connections: Map<string, string list>) =
     let hasConnection src dest =
         match connections.TryFind src with
         | Some neighbors -> List.contains dest neighbors
         | None -> false
 
-    hasConnection b a && hasConnection a c && hasConnection b c
-
+    hasConnection a b && hasConnection b c && hasConnection c a
 
 /// <summary>
-/// Counts connected triples where at least one node starts with 't'.
+/// Counts all sets of three interconnected nodes (triangles) in the network,
+/// ensuring that at least one node name starts with 't'.
 /// </summary>
-/// <param name="connections">Map of nodes to their connected neighbors</param>
-/// <returns>Count of connected triples with at least one 't' node</returns>
+/// <remarks>
+/// <para>Algorithm:</para>
+/// <list type="number">
+///   <item><description>Iterate through each node and its neighbors</description></item>
+///   <item><description>For each pair of neighbors, verify if they form a connected triple</description></item>
+///   <item><description>Ensure no triple is counted more than once by using a sorted tuple set</description></item>
+///   <item><description>Increment count only if at least one node in the set begins with 't'</description></item>
+/// </list>
+/// </remarks>
+/// <param name="connections">Adjacency map representing node connections</param>
+/// <returns>The total count of qualifying connected triples</returns>
 let part1 (connections: Map<string, string list>) =
-    let mutable groups = Set.empty
-    let mutable ans = 0
+    let mutable discoveredTriples = Set.empty
+    let mutable count = 0
 
-    for KeyValue(s, neighbors) in connections do
-        for s1 in neighbors do
-            match connections.TryFind s1 with
-            | Some s1Neighbors ->
-                for s2 in s1Neighbors do
-                    // Create a sorted tuple to avoid counting the same group multiple times
-                    let sortedNodes = [ s; s1; s2 ] |> List.sort
-                    let key = (sortedNodes.[0], sortedNodes.[1], sortedNodes.[2])
+    for KeyValue(node, neighbors) in connections do
+        for neighbor1 in neighbors do
+            match connections.TryFind neighbor1 with
+            | Some neighborsOfNeighbor1 ->
+                for neighbor2 in neighborsOfNeighbor1 do
+                    let sortedTriple = [ node; neighbor1; neighbor2 ] |> List.sort
+                    let key = (sortedTriple[0], sortedTriple[1], sortedTriple[2])
 
-                    if allThree s s1 s2 connections && not (groups.Contains key) then
-                        groups <- groups.Add key
+                    if
+                        allThree node neighbor1 neighbor2 connections
+                        && not (discoveredTriples.Contains key)
+                    then
+                        discoveredTriples <- discoveredTriples.Add key
 
-                        if s.[0] = 't' || s1.[0] = 't' || s2.[0] = 't' then
-                            ans <- ans + 1
+                        if [ node; neighbor1; neighbor2 ] |> List.exists (fun name -> name.StartsWith "t") then
+                            count <- count + 1
             | None -> ()
 
-    ans
-
-
+    count
 
 /// <summary>
-/// Finds the largest clique (complete subgraph) in the graph.
+/// Finds the largest clique (fully connected group) in the network.
 /// </summary>
-/// <param name="connections">Map of nodes to their connected neighbors</param>
-/// <returns>Comma-separated string of nodes in the largest clique, sorted alphabetically</returns>
+/// <remarks>
+/// <para>The clique identification involves the following steps:</para>
+/// <list type="number">
+///   <item><description>Begin with each node and iteratively attempt to add other nodes that connect to every node in the existing group.</description></item>
+///   <item><description>Continue recursively until no further nodes can be added.</description></item>
+///   <item><description>Keep track of the largest clique found throughout the process.</description></item>
+///   <item><description>Return this largest clique sorted alphabetically as the final password.</description></item>
+/// </list>
+/// </remarks>
+/// <param name="connections">Adjacency map representing node connections</param>
+/// <returns>
+/// A comma-separated, alphabetically sorted string of the nodes constituting the largest clique, serving as the LAN party password.
+/// </returns>
 let part2 (connections: Map<string, string list>) =
-    let mutable maxClique = []
-    let mutable maxCliqueSize = 0
+    let mutable largestClique = []
+    let mutable largestCliqueSize = 0
 
-    for KeyValue(s, _) in connections do
-        let mutable nodes = [ s ]
+    for KeyValue(node, _) in connections do
+        let mutable currentClique = [ node ]
 
-        let rec addConnectedNodes () =
-            let mutable added = false
+        let rec extendClique () =
+            let mutable expanded = false
 
-            for KeyValue(sPotential, _) in connections do
-                if not (List.contains sPotential nodes) then
-                    // Check if sPotential is connected to all nodes in the current clique
-                    let connectedToAll =
-                        nodes
-                        |> List.forall (fun n ->
-                            match connections.TryFind sPotential with
-                            | Some neighbors -> List.contains n neighbors
+            for KeyValue(candidate, _) in connections do
+                if not (currentClique |> List.contains candidate) then
+                    let connectsToAll =
+                        currentClique
+                        |> List.forall (fun cliqueMember ->
+                            match connections.TryFind candidate with
+                            | Some neighbors -> neighbors |> List.contains cliqueMember
                             | None -> false)
 
-                    if connectedToAll then
-                        nodes <- sPotential :: nodes
-                        added <- true
+                    if connectsToAll then
+                        currentClique <- candidate :: currentClique
+                        expanded <- true
 
-            if added then
-                addConnectedNodes ()
+            if expanded then
+                extendClique ()
 
-        addConnectedNodes ()
+        extendClique ()
 
-        if List.length nodes > maxCliqueSize then
-            maxClique <- nodes
-            maxCliqueSize <- List.length nodes
+        if currentClique.Length > largestCliqueSize then
+            largestClique <- currentClique
+            largestCliqueSize <- currentClique.Length
 
-    // Return comma-separated string of clique nodes
-    maxClique |> List.sort |> String.concat ","
+    largestClique |> List.sort |> String.concat ","
 
 
 /// <summary>
@@ -119,7 +152,7 @@ let parse (input: string) =
     |> Array.fold
         (fun (connections: Map<string, string list>) line ->
             let parts = line.Trim().Split('-')
-            let src, dest = parts.[0], parts.[1]
+            let src, dest = parts[0], parts[1]
 
             // Add bidirectional connections
             let connections' =
@@ -193,16 +226,16 @@ let main _ =
     printfn $"Connections count: %d{connections.Count}"
 
     let part1Result = part1 connections
-    printfn "Part 1: %d" part1Result
+    printfn $"Part 1: %d{part1Result}"
 
     let part2Result = part2 connections
-    printfn "Part 2: %s" part2Result
+    printfn $"Part 2: %s{part2Result}"
 
     // Also output the size for compatibility with the original output
     let clique = part2Result.Split(',')
-    printfn "Clique size: %d" clique.Length
+    printfn $"Clique size: %d{clique.Length}"
 
     stopwatch.Stop()
-    printfn "Elapsed time: %.4f seconds" stopwatch.Elapsed.TotalSeconds
+    printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
 
     0
