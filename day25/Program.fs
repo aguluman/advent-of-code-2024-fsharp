@@ -17,9 +17,9 @@
 ///   <item><description><b>Compatibility:</b> A lock and key fit if their combined height in each column doesn't exceed the available space</description></item>
 ///   <item><description><b>Output (Part 1):</b> Number of unique lock/key pairs that fit together without overlapping</description></item>
 /// </list>
-/// 
+///
 /// <para>The challenge involves converting the visual schematics into numerical height representations and then testing each lock against each key to determine compatibility.</para>
-/// 
+///
 /// See details at: <see href="https://adventofcode.com/2023/day/25">Advent of Code 2023, Day 25</see>
 /// </remarks>
 
@@ -56,28 +56,38 @@ open FsUnit
 /// </list>
 /// </remarks>
 let part1 (schematics: char[][] list) =
-    let h, w = schematics[0].Length, (schematics[0][0]).Length
-   
-    /// Extracts locks from the schematics by finding patterns with the top row filled.
+    // Get height and width from the first schematic
+    let h = schematics[0].Length
+    let w = (schematics[0][0]).Length
+    // Convert locks and keys into arrays for faster indexing
     let locks =
         schematics
         |> List.filter (fun s -> s[0] |> Array.forall ((=) '#'))
         |> List.map (fun s ->
-            [ 0 .. (w - 1) ]
-            |> List.map (fun j -> [ 0 .. (h - 1) ] |> List.sumBy (fun i -> if s[i][j] = '.' then 0 else 1)))
+            Array.init w (fun j -> Array.fold (fun acc i -> acc + (if s[i][j] = '.' then 0 else 1)) 0 [| 0 .. h - 1 |]))
+        |> Array.ofList
 
-
-    /// Extracts keys from the schematics by finding patterns with the top row empty.
     let keys =
         schematics
         |> List.filter (fun s -> s[0] |> Array.forall ((=) '.'))
         |> List.map (fun s ->
-            [ 0 .. (w - 1) ]
-            |> List.map (fun j -> [ 0 .. (h - 1) ] |> List.sumBy (fun i -> if s[i][j] = '.' then 0 else 1)))
+            Array.init w (fun j -> Array.fold (fun acc i -> acc + (if s[i][j] = '.' then 0 else 1)) 0 [| 0 .. h - 1 |]))
+        |> Array.ofList
 
-    List.allPairs locks keys
-    |> List.filter (fun (lock, key) -> List.zip lock key |> List.forall (fun (lock, key) -> lock + key <= h))
-    |> List.length
+    // Count valid lock-key pairs using arrays instead of lists
+    locks
+    |> Array.fold
+        (fun acc lock ->
+            acc
+            + (keys
+               |> Array.fold
+                   (fun innerAcc key ->
+                       if Array.init w (fun i -> lock[i] + key[i] <= h) |> Array.forall id then
+                           innerAcc + 1
+                       else
+                           innerAcc)
+                   0))
+        0
 
 
 
