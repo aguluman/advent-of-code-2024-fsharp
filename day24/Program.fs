@@ -1,7 +1,6 @@
-﻿module day23
+﻿module day24
 
 open System
-open System.Collections.Generic
 open System.Diagnostics
 open NUnit.Framework
 open FsUnit
@@ -14,6 +13,7 @@ type GateOperation =
     | And
     | Or
     | Xor
+
 
 // Optimized gate operations using integers
 let inline evaluateGate operation (a: int) (b: int) =
@@ -58,6 +58,9 @@ let part1 ((wires, gates): (string * int) seq * Gate seq) =
 
     Convert.ToInt64(z, 2)
 
+
+
+// Part 2: Find the correct gate configuration
 let part2 ((_wires, gates): (string * int) seq * Gate seq) =
     let hasLoop gateByOut =
         let rec dfs out path =
@@ -187,6 +190,8 @@ let part2 ((_wires, gates): (string * int) seq * Gate seq) =
 
     diff |> Seq.sort |> String.concat ","
 
+
+// Parse input into wires and gates
 let parse (input: string) =
     // Normalize line endings
     let normalizedInput = input.Replace("\r\n", "\n")
@@ -235,6 +240,7 @@ let parse (input: string) =
               Output = output })
     
     wires, gates
+
 
 module Example =
     let input =
@@ -289,6 +295,8 @@ tnw OR pbm -> gnj"
     [<Test>]
     let testPart1 () =
         parse input |> part1 |> should equal 2024L
+
+
 
 [<EntryPoint>]
 let main _ =
