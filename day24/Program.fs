@@ -1,4 +1,54 @@
-﻿module day24
+﻿/// <summary>
+/// Day 24: Crossed Wires - Boolean Logic Gate Simulation
+/// </summary>
+/// <description>
+/// Solves Advent of Code 2024 Day 24 challenge about simulating boolean logic gates and
+/// fixing a wiring issue in an electronic circuit.
+/// The implementation handles both the
+/// circuit simulation and the diagnostic repair of mis-wired gates.
+/// </description>
+///
+/// <remarks>
+/// <para>Problem details:</para>
+/// <list type="bullet">
+///   <item>
+///     <description>
+///       Part 1: Simulate a system of AND, OR, and XOR logic gates with their interconnections
+///       to calculate a final decimal number from binary outputs on z-wires
+///     </description>
+///   </item>
+///   <item>
+///     <description>
+///       Part 2: Identify and fix four pairs of gates whose output wires have been swapped,
+///       preventing the circuit from correctly performing binary addition
+///     </description>
+///   </item>
+/// </list>
+///
+/// <para>The solution implements:</para>
+/// <list type="number">
+///   <item>
+///     <description>
+///       A circuit simulation engine that processes gates in the correct order based on
+///       input/output dependencies
+///     </description>
+///   </item>
+///   <item>
+///     <description>
+///       A circuit verification system that validates whether the circuit correctly
+///       performs binary addition
+///     </description>
+///   </item>
+///   <item>
+///     <description>
+///       A search algorithm that identifies the gate pairs with swapped outputs
+///     </description>
+///   </item>
+/// </list>
+///
+/// <para>See: <see href="https://adventofcode.com/2024/day/24">Advent of Code 2024, Day 24</see></para>
+/// </remarks>
+module day24
 
 open System
 open System.Diagnostics
@@ -6,28 +56,107 @@ open NUnit.Framework
 open FsUnit
 open System.Text.RegularExpressions
 
-
-
-// Define operation types
+/// <summary>
+/// Represents the different types of boolean logic gates supported by the circuit.
+/// </summary>
+///
+/// <remarks>
+/// The circuit simulation supports three fundamental boolean operations:
+/// <list type="bullet">
+///   <item><description>AND - outputs 1 if both inputs are 1, otherwise 0</description></item>
+///   <item><description>OR - outputs 1 if at least one input is 1, otherwise 0</description></item>
+///   <item><description>XOR - outputs 1 if inputs differ, otherwise 0</description></item>
+/// </list>
+/// </remarks>
 type GateOperation = 
     | And
     | Or
     | Xor
 
 
-// Optimized gate operations using integers
+/// <summary>
+/// Evaluates a boolean logic gate operation on two input values.
+/// </summary>
+/// <description>
+/// Applies the specified logic operation (AND, OR, or XOR) to the two input values
+/// and returns the result.
+/// This function uses F#'s bitwise operators to perform
+/// the boolean logic operations efficiently.
+/// </description>
+///
+/// <remarks>
+/// <para>
+/// The function implements the three fundamental boolean operations used in the circuit:
+/// </para>
+///
+/// <list type="bullet">
+///   <item>
+///     <description>AND (&amp;&amp;&amp;) - outputs 1 if both inputs are 1, otherwise 0</description>
+///   </item>
+///   <item>
+///     <description>OR (|||) - outputs 1 if at least one input is 1, otherwise 0</description>
+///   </item>
+///   <item>
+///     <description>XOR (^^^) - outputs 1 if inputs differ, otherwise 0</description>
+///   </item>
+/// </list>
+///
+/// <para>
+/// The function is marked as inline to optimize performance for this frequently called operation.
+/// The bitwise operators ensure that the function works correctly for boolean values represented as integers.
+/// </para>
+/// </remarks>
+///
+/// <param name="operation">The logic operation to perform (And, Or, or Xor)</param>
+/// <param name="a">The first input value (0 or 1)</param>
+/// <param name="b">The second input value (0 or 1)</param>
+/// <returns>The result of applying the specified logic operation to the two inputs (0 or 1)</returns>
 let inline evaluateGate operation (a: int) (b: int) =
     match operation with  
     | And -> a &&& b 
     | Or -> a ||| b
     | Xor -> a ^^^ b
 
+/// <summary>
+/// Represents a logic gate in the circuit with its inputs, output, and operation type.
+/// </summary>
+///
+/// <remarks>
+/// Each gate has:
+/// <list type="bullet">
+///   <item><description>Two input wires identified by their string names</description></item>
+///   <item><description>One output wire identified by its string name</description></item>
+///   <item><description>An operation type (AND, OR, or XOR)</description></item>
+/// </list>
+///
+/// Gates wait for both inputs to have values before producing an output.
+/// </remarks>
 type Gate =
     { Input: string * string
       Operation: GateOperation
       Output: string }
 
 
+/// <summary>
+/// Solves Part 1 by simulating the circuit and calculating the decimal value
+/// from the binary outputs on z-wires.
+/// </summary>
+///
+/// <remarks>
+/// <para>
+/// This function processes the circuit simulation and then:
+/// </para>
+///
+/// <list type="number">
+///   <item><description>Identifies all wires whose names start with "z"</description></item>
+///   <item><description>Orders them by numeric suffix (z00, z01, z02, etc.)</description></item>
+///   <item><description>Interprets them as a binary number with z00 as the least significant bit</description></item>
+///   <item><description>Converts the binary number to decimal</description></item>
+/// </list>
+/// </remarks>
+///
+/// <param name="input">Tuple containing initial wire values and gates</param>
+/// <returns>The int64 number produced by the circuit</returns>
 let part1 ((wires, gates): (string * int) seq * Gate seq) =
     let rec run eval (gates: Gate list) =
         if List.isEmpty gates then
@@ -58,9 +187,32 @@ let part1 ((wires, gates): (string * int) seq * Gate seq) =
 
     Convert.ToInt64(z, 2)
 
-
-
-// Part 2: Find the correct gate configuration
+/// <summary>
+/// Solves Part 2 by identifying the four pairs of gates whose output wires have been swapped.
+/// </summary>
+///
+/// <remarks>
+/// <para>
+/// This function implements a search algorithm to find the four pairs of gates that,
+/// when their outputs are swapped, allow the circuit to correctly perform binary addition.
+/// The approach involves:
+/// </para>
+///
+/// <list type="number">
+///   <item><description>Building a validation function that tests if a circuit performs addition correctly</description></item>
+///   <item><description>Detecting circuit structure patterns that should appear in a binary adder</description></item>
+///   <item><description>Searching through possible gate combinations to identify the swapped pairs</description></item>
+///   <item><description>Verifying the solution by checking that the circuit works for all valid inputs</description></item>
+/// </list>
+///
+/// <para>
+/// The search employs cycle detection and structural validation to efficiently
+/// identify the correct swaps without testing all possible combinations.
+/// </para>
+/// </remarks>
+///
+/// <param name="input">Tuple containing initial wire values and gates</param>
+/// <returns>Comma-separated string of the eight wire names involved in the swaps, sorted alphabetically</returns>
 let part2 ((_wires, gates): (string * int) seq * Gate seq) =
     let hasLoop gateByOut =
         let rec dfs out path =
@@ -191,7 +343,32 @@ let part2 ((_wires, gates): (string * int) seq * Gate seq) =
     diff |> Seq.sort |> String.concat ","
 
 
-// Parse input into wires and gates
+
+/// <summary>
+/// Parses the input text into initial wire values and a collection of gates.
+/// </summary>
+///
+/// <remarks>
+/// The input has two sections:
+/// <list type="bullet">
+///   <item>
+///     <description>
+///       Initial wire values in the format "wire: value" where value is 0 or 1
+///     </description>
+///   </item>
+///   <item>
+///     <description>
+///       Gate definitions in the format "inputA OPERATION inputB -> output"
+///     </description>
+///   </item>
+/// </list>
+///
+/// The parser handles all three operation types (AND, OR, XOR) and creates
+/// a data structure representing the complete circuit.
+/// </remarks>
+///
+/// <param name="input">The input text containing wire initializations and gate definitions</param>
+/// <returns>A tuple containing initial wire values as a map and a sequence of gates</returns>
 let parse (input: string) =
     // Normalize line endings
     let normalizedInput = input.Replace("\r\n", "\n")
@@ -242,6 +419,25 @@ let parse (input: string) =
     wires, gates
 
 
+/// <summary>
+/// Unit tests for the Day 24 solution using the NUnit framework.
+/// </summary>
+///
+/// <remarks>
+/// <para>
+/// Tests validate:
+/// </para>
+///
+/// <list type="bullet">
+///   <item><description>Correct parsing of input data</description></item>
+///   <item><description>Accurate circuit simulation results</description></item>
+///   <item><description>Proper identification of swapped gate outputs</description></item>
+/// </list>
+///
+/// <para>
+/// Each test uses small, manageable examples to verify distinct aspects of the solution.
+/// </para>
+/// </remarks>
 module Example =
     let input =
         "x00: 1
@@ -297,7 +493,22 @@ tnw OR pbm -> gnj"
         parse input |> part1 |> should equal 2024L
 
 
-
+/// <summary>
+/// Main execution function that runs both parts of the Day 24 challenge.
+/// </summary>
+///
+/// <remarks>
+/// <para>
+/// This function:
+/// </para>
+///
+/// <list type="number">
+///   <item><description>Parses the input file</description></item>
+///   <item><description>Runs Part 1 to simulate the circuit and calculate the output value</description></item>
+///   <item><description>Runs Part 2 to identify the swapped gate outputs</description></item>
+///   <item><description>Reports timing and results</description></item>
+/// </list>
+/// </remarks>
 [<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
