@@ -1,22 +1,32 @@
 ﻿module day23
 
 open System
+open System.Collections.Generic
 open System.Diagnostics
 open NUnit.Framework
 open FsUnit
-
 open System.Text.RegularExpressions
 
 
-type Operation =
+
+// Define operation types
+type GateOperation = 
     | And
     | Or
     | Xor
 
+// Optimized gate operations using integers
+let inline evaluateGate operation (a: int) (b: int) =
+    match operation with  
+    | And -> a &&& b 
+    | Or -> a ||| b
+    | Xor -> a ^^^ b
+
 type Gate =
     { Input: string * string
-      Operation: Operation
+      Operation: GateOperation
       Output: string }
+
 
 let part1 ((wires, gates): (string * int) seq * Gate seq) =
     let rec run eval (gates: Gate list) =
@@ -29,21 +39,18 @@ let part1 ((wires, gates): (string * int) seq * Gate seq) =
 
                 if Map.containsKey input1 eval && Map.containsKey input2 eval then
                     let out =
-                        match g.Operation with
-                        | And -> eval[input1] &&& eval[input2]
-                        | Or -> eval[input1] ||| eval[input2]
-                        | Xor -> eval[input1] ^^^ eval[input2]
+                        evaluateGate g.Operation (eval[input1]) (eval[input2])
 
-                    (Map.add g.Output out eval, gates)
+                    Map.add g.Output out eval, gates
                 else
-                    (eval, g :: gates))
+                    eval, g :: gates)
             ||> run
 
     let eval = run (Map.ofSeq wires) (List.ofSeq gates)
 
     let z =
         eval
-        |> Map.filter (fun k _ -> k.StartsWith("z"))
+        |> Map.filter (fun k _ -> k.StartsWith "z")
         |> Map.values
         |> Seq.rev
         |> Seq.map string
@@ -284,14 +291,13 @@ tnw OR pbm -> gnj"
         parse input |> part1 |> should equal 2024L
 
 [<EntryPoint>]
-let main argv =
+let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     printfn $"Input length: %d{input.Length}"
 
             
     let wires, gates = parse input
     printfn $"Wires and Gates count: {wires.Length}, {gates.Length}"
-
 
     let stopwatch = Stopwatch()
     stopwatch.Start()
@@ -301,6 +307,5 @@ let main argv =
 
     stopwatch.Stop()
     printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"
-
 
     0
