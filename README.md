@@ -23,3 +23,6 @@ $ cd bin\Release\netX.X
 ```
 type "C:\***\******\****\input.txt" | .\day**.exe
 ```
+
+### Note
+The parse function for each challenge question’s input file was designed to handle the ```CRLF``` end of line sequence.
