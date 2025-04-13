@@ -7,6 +7,7 @@
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003AZuholyt_002Efsx_002Fl_003A_002E_002E_003F_002E_002E_003FAppData_003FLocal_003FTemp_003FSandboxFiles_003FXacapeb_003FZuholyt_002Efsx/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/Environment/Highlighting/HighlightingSourceSnapshotLocation/@EntryValue">C:\Users\chukw\AppData\Local\JetBrains\Rider2024.3\resharper-host\temp\Rider\vAny\CoverageData\_AdventOfCode2024.-640465835\Snapshot\snapshot.utdcvr</s:String>
 	
+	
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=248e173d_002D8f21_002D4a9b_002Da4c9_002Dced3c99b0997/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="testPart1" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;And&gt;&#xD;
     &lt;TestAncestor&gt;&#xD;

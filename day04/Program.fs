@@ -1,5 +1,6 @@
 module Day04
 
+open System.Diagnostics
 open NUnit.Framework
 open FsUnit
 
@@ -74,11 +75,17 @@ MXMXAXMASX"
     [<Test>]
     let ``testPart2`` () = parse input |> part2 |> should equal 9
 
+[<EntryPoint>]
 let main _ =
     let input = stdin.ReadToEnd().TrimEnd()
     let chars = parse input
-
+    
+    let stopwatch = Stopwatch.StartNew()
+    
     chars |> part1 |> printfn "Part 1: %d"
     chars |> part2 |> printfn "Part 2: %d"
+    
+    stopwatch.Stop()
+    printfn $"Elapsed time: %.4f{stopwatch.Elapsed.TotalSeconds} seconds"   
 
     0
